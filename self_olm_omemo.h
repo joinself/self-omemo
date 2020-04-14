@@ -3,8 +3,16 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct GroupMessage GroupMessage;
+typedef struct GroupSession GroupSession;
+
+typedef struct {
+  uint8_t _private[0];
+} Session;
+
+size_t add_participant(GroupSession *self, int8_t *id, Session *participant);
 
 size_t create_group_session(void);
 
-size_t encode_group_message(GroupMessage group_message, uint8_t *buf);
+size_t encrypted_size(GroupSession *self, size_t ptlen);
+
+GroupSession *new(void);

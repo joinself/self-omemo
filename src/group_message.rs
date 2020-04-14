@@ -20,9 +20,24 @@ impl GroupMessage{
         }
     }
 
-    pub fn encode(&self) -> Result<String> {
-        let j = serde_json::to_string(self)?;
-        return Ok(j)
+    pub fn encode(&self) -> Result<Vec<u8>> {
+        return serde_json::to_vec(self);
+    }
+
+    pub fn encode_to_buffer(&self, buf: *mut u8) -> Result<()>{
+        let j = serde_json::to_vec(self);
+
+        if j.is_err() {
+            return Err(j.err().unwrap())
+        };
+
+        let mut result = j.unwrap();
+
+        unsafe {
+            ptr::copy(result.as_mut_ptr(), buf, result.len());
+        }
+
+        return Ok(())
     }
 
     pub fn add_recipient(&mut self, recipient: String, ct_key: String) {
@@ -30,8 +45,8 @@ impl GroupMessage{
     }
 }
 
-#[no_mangle]
-pub extern "C" fn encode_group_message(group_message: GroupMessage, buf: *mut u8) -> size_t {
+
+fn encode_group_message(group_message: GroupMessage, buf: *mut u8) -> size_t {
     let j = serde_json::to_vec(&group_message);
 
     if j.is_err() {
@@ -47,7 +62,7 @@ pub extern "C" fn encode_group_message(group_message: GroupMessage, buf: *mut u8
     return 0
 }
 
-pub fn decode_group_message(buf: *const u8, len: usize) -> Result<GroupMessage> {
+fn decode_group_message(buf: *const u8, len: usize) -> Result<GroupMessage> {
     let mut dst = Vec::with_capacity(len);
 
     unsafe {
