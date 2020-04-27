@@ -1,16 +1,12 @@
-#include <cstdarg>
-#include <cstdint>
-#include <cstdlib>
-#include <new>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-struct GroupSession;
-
-extern "C" {
+typedef struct GroupSession GroupSession;
 
 void omemo_add_group_participant(GroupSession *gs, const char *id, OlmSession *s);
 
-GroupSession *omemo_create_group_session();
+GroupSession *omemo_create_group_session(void);
 
 void omemo_destroy_group_session(GroupSession *gs);
-
-} // extern "C"
