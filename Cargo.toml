@@ -1,12 +1,12 @@
 [package]
-name = "self-olm-omemo"
+name = "self-omemo"
 version = "0.1.0"
 authors = ["Tom Bevan <tom.bevan@r3labs.io>"]
 edition = "2018"
 build = "build.rs"
 
 [lib]
-name = "self_olm_omemo"
+name = "self_omemo"
 crate-type = ["cdylib"]
 
 [dependencies]
@@ -18,3 +18,4 @@ sodiumoxide = "0.2.5"
 
 [build-dependencies]
 bindgen = "0.53.1"
+cbindgen = "0.14.1"

@@ -3,5 +3,5 @@
 #![allow(non_snake_case)]
 #![allow(improper_ctypes)]
 
-pub mod group_message;
+pub mod message;
 pub mod omemo;

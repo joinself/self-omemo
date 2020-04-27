@@ -5,12 +5,10 @@ include!(concat!(env!("OUT_DIR"), "/olm.rs"));
 
 use std::slice;
 use std::ffi::CString;
+use std::os::raw::c_char;
 use base64::{encode_config};
-use sodiumoxide::crypto::aead::chacha20poly1305;
-use crate::group_message::GroupMessage;
-
-#[repr(C)] pub struct Account { _private: [u8; 0] }
-#[repr(C)] pub struct Session { _private: [u8; 0] }
+use sodiumoxide::crypto::aead::xchacha20poly1305_ietf;
+use crate::message::{Message, GroupMessage};
 
 pub struct GroupSession{
     participants: Vec<Participant>,
@@ -18,20 +16,25 @@ pub struct GroupSession{
 
 struct Participant {
     id: String,
-    session: *mut Session,
+    session: *mut OlmSession,
 }
 
 impl GroupSession {
-    #[no_mangle]
-    pub unsafe extern "C" fn  new() -> *mut GroupSession {
-        return &mut GroupSession{
+    pub fn new() -> *mut GroupSession {
+        let gs = GroupSession{
             participants: Vec::new(),
-        }
+        };
+
+        return Box::into_raw(Box::new(gs))
     }
 
-    #[no_mangle]
-    pub unsafe extern "C" fn add_participant(&mut self, id: *mut i8, participant: *mut Session) -> size_t {
-        let idstr = CString::from_raw(id);
+    pub fn add_participant(&mut self, id: *mut i8, s: *mut OlmSession) -> size_t {
+        let idstr: CString;
+
+        unsafe {
+            idstr = CString::from_raw(id);
+        }
+
         let pid = idstr.into_string();
 
         if pid.is_err() {
@@ -40,36 +43,46 @@ impl GroupSession {
 
         self.participants.push(Participant{
             id: pid.unwrap(),
-            session: participant,
+            session: s,
         });
 
         return 0;
     }
 
-    #[no_mangle]
-    pub unsafe extern "C" fn encrypted_size(&mut self, ptlen: size_t) -> size_t {
-        let ptsz = ptlen as usize;
+    pub fn encrypted_size(&mut self, ptlen: size_t) -> size_t {
+        let pt_sz: usize;
 
-        // TODO: calculate base64 encoding of ciphertext
+        unsafe {
+            // include 16 byte validation tag
+            pt_sz = sodium_base64_encoded_len(ptlen+24, sodium_base64_VARIANT_ORIGINAL_NO_PADDING as i32) as usize;
+        }
 
-        // include 16 byte validation tag
-        let pt = String::from_utf8(vec![b'X'; ptsz+16]);
+        let pt = String::from_utf8(vec![b'X'; pt_sz]);
         if pt.is_err() {
             return 0;
         }
-
-        // create mock recipient key
-        let ky = String::from_utf8(vec![b'X'; 289]);
-        if pt.is_err() {
-            return 0;
-        }
-
-        let key = ky.unwrap();
 
         let mut gm = GroupMessage::new(pt.unwrap());
 
         for p in &self.participants {
-            gm.add_recipient(p.id.clone(), key.clone());
+            let enc_sz: u64;
+
+            unsafe {
+                enc_sz = olm_encrypt_message_length(
+                    p.session,
+                    32 + 24,
+                );
+            }
+
+            // create mock recipient key
+            let ky = String::from_utf8(vec![b'X'; enc_sz as usize]);
+            if ky.is_err() {
+                return 0;
+            }
+
+            let key = ky.unwrap();
+
+            gm.add_recipient(p.id.clone(), Message::new(0, key.clone()));
         }
 
         let res = gm.encode();
@@ -83,26 +96,91 @@ impl GroupSession {
         return alen as size_t;
     }
 
-    pub unsafe extern "C" fn encrypt(&mut self, pt: *const u8, ptlen: size_t, ct: *mut u8, ctlen: size_t) -> size_t {
+    pub fn encrypt(&mut self, pt: *const u8, ptlen: size_t, ct: *mut u8, ctlen: size_t) -> size_t {
         assert!(!pt.is_null(), "plaintext buffer must not be null");
         assert!(!ct.is_null(), "ciphertext buffer must not be null");
         assert!(self.encrypted_size(ptlen) == ctlen, "ciphertext buffer is not big enough");
 
-        let ptb: &[u8] = slice::from_raw_parts(pt, ptlen as usize);
+        if sodiumoxide::init().is_err() {
+            return 0;
+        }
 
-        let k = chacha20poly1305::gen_key();
-        let n = chacha20poly1305::gen_nonce();
+        // convert the c plaintext to a rust slice
+        let pt_buf: &[u8];
 
-        let ctb = chacha20poly1305::seal(ptb, None, &n, &k);
+        unsafe {
+            pt_buf = slice::from_raw_parts(pt, ptlen as usize);
+        }
 
-        let encct = encode_config(ctb, base64::STANDARD_NO_PAD);
+        // create group message key
+        let k = xchacha20poly1305_ietf::gen_key();
+        let n = xchacha20poly1305_ietf::gen_nonce();
 
-        let mut gm = GroupMessage::new(encct);
+        let ctb = xchacha20poly1305_ietf::seal(pt_buf, None, &n, &k);
 
+        // encode the ciphertext to base64
+        let enc_ct = encode_config(ctb, base64::STANDARD_NO_PAD);
+
+        let mut gm = GroupMessage::new(enc_ct);
+
+        // join the key and nonce together
+        let mut grp_pt = concat_u8(k.as_ref(), n.as_ref());
+
+        // encrypt group message key with participants olm sessions
         for p in &self.participants {
-            //p.session
+            // get the message type and size of random needed to encrypt
+            let mtype: u64;
+            let rand_sz: u64;
 
-            gm.add_recipient(p.id.clone(), key.clone());
+            unsafe {
+                mtype = olm_encrypt_message_type(p.session);
+                rand_sz = olm_encrypt_random_length(p.session);
+            }
+
+            let mut rand_buf = Vec::with_capacity(rand_sz as usize);
+
+            if rand_sz > 0 {
+                unsafe {
+                    randombytes_buf(rand_buf.as_mut_ptr(), rand_sz);
+                }
+            }
+
+            let mut ct_sz: u64;
+
+            unsafe {
+                ct_sz = olm_encrypt_message_length(
+                    p.session,
+                    32 + 24,
+                );
+            }
+
+            // allocate buffer for the ciphertext and encrypt the key + nonce
+            let mut ct_buf: Vec<u8> = Vec::with_capacity(ct_sz as usize);
+
+            unsafe {
+                ct_sz = olm_encrypt(
+                    p.session,
+                    grp_pt.as_mut_ptr() as *mut libc::c_void,
+                    grp_pt.len() as u64,
+                    rand_buf.as_mut_ptr(),
+                    rand_sz,
+                    ct_buf.as_mut_ptr() as *mut libc::c_void,
+                    ct_sz,
+                );
+            }
+
+            let ct = String::from_utf8(ct_buf[0..ct_sz as usize].to_vec());
+            if ct.is_err() {
+                return 0;
+            }
+
+            // add encrypted key + nonce to group message
+            gm.add_recipient(p.id.clone(), Message::new(mtype as i64, ct.unwrap()));
+        }
+
+        let result = gm.encode_to_buffer(ct);
+        if result.is_err() {
+            return 0;
         }
 
         return 0;
@@ -110,7 +188,21 @@ impl GroupSession {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn create_group_session() -> *mut GroupSession {
+pub unsafe extern "C" fn omemo_create_group_session() -> *mut GroupSession {
     return GroupSession::new();
-    //return olm_account_size();
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn omemo_destroy_group_session(gs: *mut GroupSession) {
+    // consume the box to deallocate
+    Box::from_raw(gs);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn omemo_add_group_participant(gs: *mut GroupSession, id: *const c_char, s: *mut OlmSession) {
+    (*gs).add_participant(id as *mut i8 , s);
+}
+
+fn concat_u8(first: &[u8], second: &[u8]) -> Vec<u8> {
+    [first, second].concat()
 }

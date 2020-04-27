@@ -7,9 +7,24 @@ use libc::{size_t};
 use std::ptr;
 
 #[derive(Serialize, Deserialize)]
-pub struct GroupMessage {
-    pub recipients: HashMap<String, String>,
+pub struct Message {
+    pub mtype: i64,
     pub ciphertext: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GroupMessage {
+    pub recipients: HashMap<String, Message>,
+    pub ciphertext: String,
+}
+
+impl Message{
+    pub fn new(mtype: i64, ciphertext: String) -> Message {
+        return Message{
+            mtype: mtype,
+            ciphertext: ciphertext,
+        }
+    }
 }
 
 impl GroupMessage{
@@ -24,7 +39,7 @@ impl GroupMessage{
         return serde_json::to_vec(self);
     }
 
-    pub fn encode_to_buffer(&self, buf: *mut u8) -> Result<()>{
+    pub fn encode_to_buffer(&self, buf: *mut u8) -> Result<usize>{
         let j = serde_json::to_vec(self);
 
         if j.is_err() {
@@ -37,11 +52,11 @@ impl GroupMessage{
             ptr::copy(result.as_mut_ptr(), buf, result.len());
         }
 
-        return Ok(())
+        return Ok(result.len())
     }
 
-    pub fn add_recipient(&mut self, recipient: String, ct_key: String) {
-        self.recipients.insert(recipient, ct_key);
+    pub fn add_recipient(&mut self, recipient: String, msg: Message) {
+        self.recipients.insert(recipient, msg);
     }
 }
 
@@ -92,11 +107,11 @@ mod tests {
         let ct = "test".to_string();
         let mut gm = GroupMessage::new(ct);
 
-        gm.add_recipient(String::from("test-recipient"), String::from("test-ciphertext-key"));
+        gm.add_recipient(String::from("test-recipient"), Message::new(0, String::from("test-ciphertext-key")));
 
         let recip = gm.recipients.get(&String::from("test-recipient"));
         if let Some(k) = &recip {
-            assert_eq!(&String::from("test-ciphertext-key"), *k);
+            assert_eq!(String::from("test-ciphertext-key"), k.ciphertext);
         }
     }
 }
