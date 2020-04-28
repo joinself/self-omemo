@@ -3,8 +3,9 @@ extern crate base64;
 
 include!(concat!(env!("OUT_DIR"), "/olm.rs"));
 
+use std::ffi::IntoStringError;
 use std::slice;
-use std::ffi::CString;
+use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
 use base64::{encode_config};
 use sodiumoxide::crypto::aead::xchacha20poly1305_ietf;
@@ -42,7 +43,7 @@ impl GroupSession {
         };
 
         self.participants.push(Participant{
-            id: pid.unwrap(),
+            id: String::from(pid.unwrap()),
             session: s,
         });
 
@@ -96,10 +97,10 @@ impl GroupSession {
         return alen as size_t;
     }
 
-    pub fn encrypt(&mut self, pt: *const u8, ptlen: size_t, ct: *mut u8, ctlen: size_t) -> size_t {
+    pub fn encrypt(&mut self, pt: *const u8, pt_len: size_t, ct: *mut u8, ct_len: size_t) -> size_t {
         assert!(!pt.is_null(), "plaintext buffer must not be null");
         assert!(!ct.is_null(), "ciphertext buffer must not be null");
-        assert!(self.encrypted_size(ptlen) == ctlen, "ciphertext buffer is not big enough");
+        //assert!(self.encrypted_size(pt_len) > ct_len, "ciphertext buffer is not big enough");
 
         if sodiumoxide::init().is_err() {
             return 0;
@@ -109,7 +110,7 @@ impl GroupSession {
         let pt_buf: &[u8];
 
         unsafe {
-            pt_buf = slice::from_raw_parts(pt, ptlen as usize);
+            pt_buf = slice::from_raw_parts(pt, pt_len as usize);
         }
 
         // create group message key
@@ -152,6 +153,13 @@ impl GroupSession {
                     p.session,
                     32 + 24,
                 );
+
+                let last_err = session_error(p.session);
+
+                if last_err.is_some() {
+                    println!("Error: {:?}", last_err.unwrap());
+                    return 0;
+                }
             }
 
             // allocate buffer for the ciphertext and encrypt the key + nonce
@@ -167,9 +175,17 @@ impl GroupSession {
                     ct_buf.as_mut_ptr() as *mut libc::c_void,
                     ct_sz,
                 );
+
+                let last_err = session_error(p.session);
+
+                if last_err.is_some() {
+                    println!("Error: {:?}", last_err.unwrap());
+                    return 0;
+                }
             }
 
-            let ct = String::from_utf8(ct_buf[0..ct_sz as usize].to_vec());
+            // trim unused space
+            let ct = String::from_utf8(ct_buf);//[0..ct_sz as usize].to_vec());
             if ct.is_err() {
                 return 0;
             }
@@ -178,12 +194,13 @@ impl GroupSession {
             gm.add_recipient(p.id.clone(), Message::new(mtype as i64, ct.unwrap()));
         }
 
-        let result = gm.encode_to_buffer(ct);
+        // copy encoded json to ciphertext buffer
+        let result = gm.encode_to_buffer(ct, ct_len);
         if result.is_err() {
             return 0;
         }
 
-        return 0;
+        return result.unwrap() as size_t;
     }
 }
 
@@ -194,7 +211,7 @@ pub unsafe extern "C" fn omemo_create_group_session() -> *mut GroupSession {
 
 #[no_mangle]
 pub unsafe extern "C" fn omemo_destroy_group_session(gs: *mut GroupSession) {
-    // consume the box to deallocate
+    // consume the box to deallocate the session
     Box::from_raw(gs);
 }
 
@@ -203,6 +220,32 @@ pub unsafe extern "C" fn omemo_add_group_participant(gs: *mut GroupSession, id: 
     (*gs).add_participant(id as *mut i8 , s);
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn omemo_encrypted_size(gs: *mut GroupSession, sz: size_t) -> size_t {
+    return (*gs).encrypted_size(sz);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn omemo_encrypt(gs: *mut GroupSession, pt: *const u8, pt_len: size_t, ct: *mut u8, ct_len: size_t) -> size_t {
+    return (*gs).encrypt(pt, pt_len, ct, ct_len)
+}
+
 fn concat_u8(first: &[u8], second: &[u8]) -> Vec<u8> {
     [first, second].concat()
+}
+
+fn session_error(s: *mut OlmSession) -> Option<String> {
+    let err_str: String;
+
+    unsafe {
+        let err = olm_session_last_error(s);
+        let err_str_cnv = CStr::from_ptr(err).to_str();
+        err_str = String::from(err_str_cnv.unwrap());
+    }
+
+    if err_str != "SUCCESS" {
+        return Some(err_str);
+    }
+
+    return None;
 }

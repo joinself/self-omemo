@@ -39,7 +39,7 @@ impl GroupMessage{
         return serde_json::to_vec(self);
     }
 
-    pub fn encode_to_buffer(&self, buf: *mut u8) -> Result<usize>{
+    pub fn encode_to_buffer(&self, buf: *mut u8, buf_len: u64) -> Result<size_t>{
         let j = serde_json::to_vec(self);
 
         if j.is_err() {
@@ -48,18 +48,19 @@ impl GroupMessage{
 
         let mut result = j.unwrap();
 
+        assert!(buf_len as usize >= result.len(), "buffer size is too small");
+
         unsafe {
             ptr::copy(result.as_mut_ptr(), buf, result.len());
         }
 
-        return Ok(result.len())
+        return Ok(result.len());
     }
 
     pub fn add_recipient(&mut self, recipient: String, msg: Message) {
         self.recipients.insert(recipient, msg);
     }
 }
-
 
 fn encode_group_message(group_message: GroupMessage, buf: *mut u8) -> size_t {
     let j = serde_json::to_vec(&group_message);

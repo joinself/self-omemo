@@ -34,6 +34,7 @@ fn main() {
         .write_to_file(out_path.join("olm.rs"))
         .expect("Couldn't write bindings!");
 
+    // generate c header bindings
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
 
     cbindgen::Builder::new()
