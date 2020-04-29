@@ -62,7 +62,7 @@ impl GroupMessage{
     }
 }
 
-fn encode_group_message(group_message: GroupMessage, buf: *mut u8) -> size_t {
+pub fn encode_group_message(group_message: GroupMessage, buf: *mut u8) -> size_t {
     let j = serde_json::to_vec(&group_message);
 
     if j.is_err() {
@@ -78,7 +78,7 @@ fn encode_group_message(group_message: GroupMessage, buf: *mut u8) -> size_t {
     return 0
 }
 
-fn decode_group_message(buf: *const u8, len: usize) -> Result<GroupMessage> {
+pub fn decode_group_message(buf: *const u8, len: usize) -> Result<GroupMessage> {
     let mut dst = Vec::with_capacity(len);
 
     unsafe {
