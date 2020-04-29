@@ -6,6 +6,7 @@ include!(concat!(env!("OUT_DIR"), "/olm.rs"));
 use std::slice;
 use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
+use std::ptr;
 use base64::{encode_config, decode_config};
 use sodiumoxide::crypto::aead::xchacha20poly1305_ietf;
 use crate::message::{Message, GroupMessage, decode_group_message};
@@ -156,11 +157,11 @@ impl GroupSession {
                 rand_sz = olm_encrypt_random_length(p.session);
             }
 
-            let mut rand_buf = Vec::with_capacity(rand_sz as usize);
+            let mut rand_buf: Vec<u8> = vec![0; rand_sz as usize];
 
             if rand_sz > 0 {
                 unsafe {
-                    randombytes_buf(rand_buf.as_mut_ptr(), rand_sz);
+                    randombytes_buf(rand_buf.as_mut_ptr() as *mut libc::c_void, rand_sz);
                 }
             }
 
@@ -181,21 +182,20 @@ impl GroupSession {
             }
 
             // allocate buffer for the ciphertext and encrypt the key + nonce
-            let mut ct_buf: Vec<u8> = Vec::with_capacity(ct_sz as usize);
+            let mut ct_buf: Vec<u8> = vec![0; ct_sz as usize];
 
             unsafe {
                 ct_sz = olm_encrypt(
                     p.session,
                     grp_pt.as_mut_ptr() as *mut libc::c_void,
                     grp_pt.len() as u64,
-                    rand_buf.as_mut_ptr(),
+                    rand_buf.as_mut_ptr() as *mut libc::c_void,
                     rand_sz,
                     ct_buf.as_mut_ptr() as *mut libc::c_void,
                     ct_sz,
                 );
 
                 let last_err = session_error(p.session);
-
                 if last_err.is_some() {
                     println!("Error: {:?}", last_err.unwrap());
                     return 0;
@@ -203,7 +203,7 @@ impl GroupSession {
             }
 
             // trim unused space
-            let cts = String::from_utf8(ct_buf);//[0..ct_sz as usize].to_vec());
+            let cts = String::from_utf8(ct_buf); //[0..ct_sz as usize].to_vec());
             if cts.is_err() {
                 return 0;
             }
@@ -230,18 +230,26 @@ impl GroupSession {
             idstr = CString::from_raw(id);
         }
 
+        println!("decode string");
+
         let pidstr = idstr.into_string();
         if pidstr.is_err() {
+            println!("strconv failed {:?}", pidstr.unwrap_err());
             return 0;
         };
 
         let pid = pidstr.unwrap();
 
+        println!("get session");
+
         // get the index of the senders session
         let sp = self.participants.iter().position(|p| p.id == pid);
         if sp.is_none() {
+            println!("couldn't find session");
             return 0;
         }
+
+        println!("decode group message");
 
         let spi = sp.unwrap();
 
@@ -249,15 +257,25 @@ impl GroupSession {
 
         // decode the group message
         let dgm = decode_group_message(ct, ct_len as usize);
+        match dgm {
+            Ok(v) => println!("working with version"),
+            Err(e) => println!("error parsing header: {:?}", e),
+        }
+        /*
         if dgm.is_err() {
+            println!("couldnt decode message");
             return 0;
         }
+        */
 
-        let gm = dgm.unwrap();
+        //let gm: GroupMessage::new("test".to_string()); // = dgm.unwrap();
+        let x = "test".to_string();
+        let gm = GroupMessage::new(x);
 
         // get the encrypted ciphertext key from the header
         let mh = gm.recipients.get(&self.id);
         if mh.is_none() {
+            println!("getting recipient failed");
             return 0;
         }
 
@@ -286,7 +304,7 @@ impl GroupSession {
             return 0;
         }
 
-        let mut ptk_buf: Vec<u8> = Vec::with_capacity(ptk_sz as usize);
+        let mut ptk_buf: Vec<u8> = vec![0; ptk_sz as usize];
 
         unsafe {
             olm_decrypt(
@@ -308,6 +326,7 @@ impl GroupSession {
         // get key and nonce from header plaintext
         let pt_key = xchacha20poly1305_ietf::Key::from_slice(&ptk_buf[0..31]);
         if pt_key.is_none() {
+            println!("key is empty");
             return 0;
         }
 
@@ -315,6 +334,7 @@ impl GroupSession {
 
         let pt_nonce = xchacha20poly1305_ietf::Nonce::from_slice(&ptk_buf[31..56]);
         if pt_nonce.is_none() {
+            println!("nonce is empty");
             return 0;
         }
 
@@ -323,17 +343,29 @@ impl GroupSession {
         // decode the group messages ciphertext from base64
         let dec = decode_config(gm.ciphertext, base64::STANDARD_NO_PAD);
         if dec.is_err() {
+            println!("decoding failed {:?}", dec.unwrap_err());
             return 0;
         }
 
         let dec_ct = dec.unwrap();
 
-        let dec_pt = xchacha20poly1305_ietf::open(&dec_ct[..], None, &nonce, &key);
-        if dec_pt.is_err() {
+        let dec_pt_result = xchacha20poly1305_ietf::open(&dec_ct[..], None, &nonce, &key);
+        if dec_pt_result.is_err() {
+            println!("decrypt failed {:?}", dec_pt_result.unwrap_err());
             return 0;
         }
 
-        return 1;
+        let mut dec_pt = dec_pt_result.unwrap();
+
+        // TODO : check pt buffer is big enough
+
+
+
+        unsafe {
+            ptr::copy(pt, dec_pt.as_mut_ptr(), ct_len as usize);
+        }
+
+        return dec_pt.len() as size_t;
     }
 }
 
@@ -368,6 +400,11 @@ pub unsafe extern "C" fn omemo_encrypt(gs: *mut GroupSession, pt: *const u8, pt_
     return (*gs).encrypt(pt, pt_len, ct, ct_len)
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn omemo_decrypt(gs: *mut GroupSession, id: *const c_char, pt: *const u8, pt_len: size_t, ct: *mut u8, ct_len: size_t) -> size_t {
+    return (*gs).decrypt(id as *mut i8, pt, pt_len, ct, ct_len)
+}
+
 fn concat_u8(first: &[u8], second: &[u8]) -> Vec<u8> {
     [first, second].concat()
 }
@@ -379,6 +416,7 @@ fn session_error(s: *mut OlmSession) -> Option<String> {
         let err = olm_session_last_error(s);
         let err_str_cnv = CStr::from_ptr(err).to_str();
         err_str = String::from(err_str_cnv.unwrap());
+        println!("OLM {:?}", err_str);
     }
 
     if err_str != "SUCCESS" {

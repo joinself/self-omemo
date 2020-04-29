@@ -2,7 +2,7 @@ extern crate libc;
 
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
+use serde_json::{Result};
 use libc::{size_t};
 use std::ptr;
 
