@@ -11,9 +11,9 @@ GroupSession *omemo_create_group_session(const char *id);
 
 size_t omemo_decrypt(GroupSession *gs,
                      const char *id,
-                     const uint8_t *pt,
+                     uint8_t *pt,
                      size_t pt_len,
-                     uint8_t *ct,
+                     const uint8_t *ct,
                      size_t ct_len);
 
 size_t omemo_decrypted_size(GroupSession *gs, const uint8_t *ct, size_t ct_len);

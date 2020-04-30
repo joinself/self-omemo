@@ -230,26 +230,18 @@ impl GroupSession {
             idstr = CString::from_raw(id);
         }
 
-        println!("decode string");
-
         let pidstr = idstr.into_string();
         if pidstr.is_err() {
-            println!("strconv failed {:?}", pidstr.unwrap_err());
             return 0;
         };
 
         let pid = pidstr.unwrap();
 
-        println!("get session");
-
         // get the index of the senders session
         let sp = self.participants.iter().position(|p| p.id == pid);
         if sp.is_none() {
-            println!("couldn't find session");
             return 0;
         }
-
-        println!("decode group message");
 
         let spi = sp.unwrap();
 
@@ -257,25 +249,15 @@ impl GroupSession {
 
         // decode the group message
         let dgm = decode_group_message(ct, ct_len as usize);
-        match dgm {
-            Ok(v) => println!("working with version"),
-            Err(e) => println!("error parsing header: {:?}", e),
-        }
-        /*
         if dgm.is_err() {
-            println!("couldnt decode message");
             return 0;
         }
-        */
 
-        //let gm: GroupMessage::new("test".to_string()); // = dgm.unwrap();
-        let x = "test".to_string();
-        let gm = GroupMessage::new(x);
+        let gm = dgm.unwrap();
 
         // get the encrypted ciphertext key from the header
         let mh = gm.recipients.get(&self.id);
         if mh.is_none() {
-            println!("getting recipient failed");
             return 0;
         }
 
@@ -300,7 +282,6 @@ impl GroupSession {
 
         let mut last_err = session_error(s);
         if last_err.is_some() {
-            println!("Error: {:?}", last_err.unwrap());
             return 0;
         }
 
@@ -319,22 +300,19 @@ impl GroupSession {
 
         last_err = session_error(s);
         if last_err.is_some() {
-            println!("Error: {:?}", last_err.unwrap());
             return 0;
         }
 
         // get key and nonce from header plaintext
-        let pt_key = xchacha20poly1305_ietf::Key::from_slice(&ptk_buf[0..31]);
+        let pt_key = xchacha20poly1305_ietf::Key::from_slice(&ptk_buf[0..32]);
         if pt_key.is_none() {
-            println!("key is empty");
             return 0;
         }
 
         let key = pt_key.unwrap();
 
-        let pt_nonce = xchacha20poly1305_ietf::Nonce::from_slice(&ptk_buf[31..56]);
+        let pt_nonce = xchacha20poly1305_ietf::Nonce::from_slice(&ptk_buf[32..56]);
         if pt_nonce.is_none() {
-            println!("nonce is empty");
             return 0;
         }
 
@@ -343,7 +321,6 @@ impl GroupSession {
         // decode the group messages ciphertext from base64
         let dec = decode_config(gm.ciphertext, base64::STANDARD_NO_PAD);
         if dec.is_err() {
-            println!("decoding failed {:?}", dec.unwrap_err());
             return 0;
         }
 
@@ -351,18 +328,14 @@ impl GroupSession {
 
         let dec_pt_result = xchacha20poly1305_ietf::open(&dec_ct[..], None, &nonce, &key);
         if dec_pt_result.is_err() {
-            println!("decrypt failed {:?}", dec_pt_result.unwrap_err());
             return 0;
         }
 
         let mut dec_pt = dec_pt_result.unwrap();
 
         // TODO : check pt buffer is big enough
-
-
-
         unsafe {
-            ptr::copy(pt, dec_pt.as_mut_ptr(), ct_len as usize);
+            ptr::copy(dec_pt.as_mut_ptr(), pt, pt_len as usize);
         }
 
         return dec_pt.len() as size_t;
