@@ -223,7 +223,7 @@ impl GroupSession {
         return result.unwrap() as size_t;
     }
 
-    pub fn decrypt(&mut self, id: *mut i8, pt: *const u8, pt_len: size_t, ct: *mut u8, ct_len: size_t) -> size_t {
+    pub fn decrypt(&mut self, id: *mut i8, pt: *mut u8, pt_len: size_t, ct: *const u8, ct_len: size_t) -> size_t {
         let idstr: CString;
 
         unsafe {
@@ -401,7 +401,7 @@ pub unsafe extern "C" fn omemo_encrypt(gs: *mut GroupSession, pt: *const u8, pt_
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn omemo_decrypt(gs: *mut GroupSession, id: *const c_char, pt: *const u8, pt_len: size_t, ct: *mut u8, ct_len: size_t) -> size_t {
+pub unsafe extern "C" fn omemo_decrypt(gs: *mut GroupSession, id: *const c_char, pt: *mut u8, pt_len: size_t, ct: *const u8, ct_len: size_t) -> size_t {
     return (*gs).decrypt(id as *mut i8, pt, pt_len, ct, ct_len)
 }
 
