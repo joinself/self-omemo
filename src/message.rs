@@ -6,7 +6,7 @@ use serde_json::{Result};
 use libc::{size_t};
 use std::ptr;
 
-
+// Message is the containing structure for a message to an individual recipient
 // macro to set this struct to as serializable by serde, the encoding library
 #[derive(Serialize, Deserialize)]
 pub struct Message {
@@ -14,6 +14,22 @@ pub struct Message {
     pub ciphertext: String,
 }
 
+// GroupMessage holds the ciphertext that is shared for multiple recipients, as well as
+// the encrypted keys for each recipient that opens the ciphertext.
+// when serialized to json, this message will look like:
+// {
+//     "recipients": {
+//         "alice:1": {
+//              "mtype": 0,
+//              "ciphertext": "encryptedKeyforCiphertextMessage"
+//          },
+//         "bob:1": {
+//              "mtype": 1,
+//              "ciphertext": "encryptedKeyforCiphertextMessage"
+//          },
+//     },
+//     "ciphertext": "ciphertextMessage"
+// }
 // macro to set this struct to as serializable by serde, the encoding library
 #[derive(Serialize, Deserialize)]
 pub struct GroupMessage {
