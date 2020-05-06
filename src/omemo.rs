@@ -11,21 +11,32 @@ use base64::{encode_config, decode_config};
 use sodiumoxide::crypto::aead::xchacha20poly1305_ietf;
 use crate::message::{Message, GroupMessage, decode_group_message};
 
+// GroupSession holds all of the participants of a session,
+// as well as the identity of the current user
+// the id is used to determine which key to use
+// when decrypting a message
 pub struct GroupSession{
     id: String,
     participants: Vec<Participant>,
 }
 
+// Participant stores the id and related olm session of the recipients
+// you want to encrypt a message for
 struct Participant {
     id: String,
     session: *mut OlmSession,
 }
 
 impl GroupSession {
+    // creates a new boxed group session allocated on the heap
     pub fn new(id: *mut i8) -> *mut GroupSession {
         let idstr: CString;
 
         unsafe {
+            // takes ownership of the strings memory
+            // that is passed into this function.
+            // rust will free this memory so the caller
+            // does not have to
             idstr = CString::from_raw(id);
         }
 
@@ -37,10 +48,15 @@ impl GroupSession {
         return Box::into_raw(Box::new(gs))
     }
 
+    // add a participcant and their session to the group session
     pub fn add_participant(&mut self, id: *mut i8, s: *mut OlmSession) -> size_t {
         let idstr: CString;
 
         unsafe {
+            // takes ownership of the strings memory
+            // that is passed into this function.
+            // rust will free this memory so the caller
+            // does not have to
             idstr = CString::from_raw(id);
         }
 
@@ -58,9 +74,11 @@ impl GroupSession {
         return 0;
     }
 
+    // returns the size of an encrypted message based on the plaintext size
     pub fn encrypted_size(&mut self, pt_len: size_t) -> size_t {
         let pt_sz: usize;
 
+        // generate a fake encoded message
         unsafe {
             // include 16 byte validation tag
             pt_sz = sodium_base64_encoded_len(pt_len+24, sodium_base64_VARIANT_ORIGINAL_NO_PADDING as i32) as usize;
@@ -73,9 +91,15 @@ impl GroupSession {
 
         let mut gm = GroupMessage::new(pt.unwrap());
 
+        // iterate over each participant and add a fake
+        // encrypted key as its value
         for p in &self.participants {
             let enc_sz: u64;
 
+            // get the size of the ciphertext thats encrypted
+            // by the olm session. the olm session
+            // will be encrypting the key and nonce used
+            // to generate the main messages ciphertext
             unsafe {
                 enc_sz = olm_encrypt_message_length(
                     p.session,
@@ -94,6 +118,7 @@ impl GroupSession {
             gm.add_recipient(p.id.clone(), Message::new(0, key.clone()));
         }
 
+        // encode the fake message and return its size
         let res = gm.encode();
 
         if res.is_err() {
@@ -105,17 +130,22 @@ impl GroupSession {
         return alen as size_t;
     }
 
+    // returns the size of the paintext message based on the ciphertext
     pub fn decrypted_size(&mut self, ct: *const u8, ct_len: size_t) -> size_t {
+        // decode the group message
         let gm = decode_group_message(ct, ct_len as usize);
         if gm.is_err() {
             return 0;
         }
 
+        // plaintext size is the messages ciphertext size minus the 16
+        // bytes used by the cipher to authenticate the message
         let pt_len = gm.unwrap().ciphertext.len() - (16 as usize);
 
         return pt_len as size_t
     }
 
+    // encrypt a message
     pub fn encrypt(&mut self, pt: *const u8, pt_len: size_t, ct: *mut u8, ct_len: size_t) -> size_t {
         assert!(!pt.is_null(), "plaintext buffer must not be null");
         assert!(!ct.is_null(), "ciphertext buffer must not be null");
@@ -129,6 +159,7 @@ impl GroupSession {
         let pt_buf: &[u8];
 
         unsafe {
+            // create a slice from the plaintext buffer
             pt_buf = slice::from_raw_parts(pt, pt_len as usize);
         }
 
@@ -152,6 +183,11 @@ impl GroupSession {
             let mtype: u64;
             let rand_sz: u64;
 
+            // determine the type of olm message and the size of the random seed
+            // if the session is new and no messages have been sent to the recipient
+            // the message will be larger and of type 0 (initial message).
+            // if the session has encrpyted prior messages, the message type will
+            // be 1 (normal message)
             unsafe {
                 mtype = olm_encrypt_message_type(p.session);
                 rand_sz = olm_encrypt_random_length(p.session);
@@ -159,6 +195,7 @@ impl GroupSession {
 
             let mut rand_buf: Vec<u8> = vec![0; rand_sz as usize];
 
+            // generate some random data if needed
             if rand_sz > 0 {
                 unsafe {
                     randombytes_buf(rand_buf.as_mut_ptr() as *mut libc::c_void, rand_sz);
@@ -168,6 +205,7 @@ impl GroupSession {
             let mut ct_sz: u64;
 
             unsafe {
+                // get the actual size of the encrypted key
                 ct_sz = olm_encrypt_message_length(
                     p.session,
                     32 + 24,
@@ -227,6 +265,10 @@ impl GroupSession {
         let idstr: CString;
 
         unsafe {
+            // takes ownership of the strings memory
+            // that is passed into this function.
+            // rust will free this memory so the caller
+            // does not have to
             idstr = CString::from_raw(id);
         }
 
@@ -285,8 +327,10 @@ impl GroupSession {
             return 0;
         }
 
+        // allocate a buffer for the plaintext message key + nonce
         let mut ptk_buf: Vec<u8> = vec![0; ptk_sz as usize];
 
+        // decrypt the message key + nonce
         unsafe {
             olm_decrypt(
                 s,
@@ -303,7 +347,7 @@ impl GroupSession {
             return 0;
         }
 
-        // get key and nonce from header plaintext
+        // convert the raw key and nonce into a xchacha20poly1305 key and nonce
         let pt_key = xchacha20poly1305_ietf::Key::from_slice(&ptk_buf[0..32]);
         if pt_key.is_none() {
             return 0;
@@ -342,37 +386,44 @@ impl GroupSession {
     }
 }
 
+// creates a group session that allocated on the heap
 #[no_mangle]
 pub unsafe extern "C" fn omemo_create_group_session(id: *const c_char) -> *mut GroupSession {
     return GroupSession::new(id as *mut i8);
 }
 
+// destroy a group session by consuming the box
 #[no_mangle]
 pub unsafe extern "C" fn omemo_destroy_group_session(gs: *mut GroupSession) {
     // consume the box to deallocate the session
     Box::from_raw(gs);
 }
 
+// add a participant to a group session
 #[no_mangle]
 pub unsafe extern "C" fn omemo_add_group_participant(gs: *mut GroupSession, id: *const c_char, s: *mut OlmSession) {
     (*gs).add_participant(id as *mut i8 , s);
 }
 
+// get the size of an encrypted message from the plaintext size
 #[no_mangle]
 pub unsafe extern "C" fn omemo_encrypted_size(gs: *mut GroupSession, pt_len: size_t) -> size_t {
     return (*gs).encrypted_size(pt_len);
 }
 
+// get the size of a decrypted message from the ciphertext
 #[no_mangle]
 pub unsafe extern "C" fn omemo_decrypted_size(gs: *mut GroupSession, ct: *const u8, ct_len: size_t) -> size_t {
     return (*gs).decrypted_size(ct, ct_len);
 }
 
+// encrypt a message for all participants in the group session
 #[no_mangle]
 pub unsafe extern "C" fn omemo_encrypt(gs: *mut GroupSession, pt: *const u8, pt_len: size_t, ct: *mut u8, ct_len: size_t) -> size_t {
     return (*gs).encrypt(pt, pt_len, ct, ct_len)
 }
 
+// decrypt a message from one of the recipients in the group session
 #[no_mangle]
 pub unsafe extern "C" fn omemo_decrypt(gs: *mut GroupSession, id: *const c_char, pt: *mut u8, pt_len: size_t, ct: *const u8, ct_len: size_t) -> size_t {
     return (*gs).decrypt(id as *mut i8, pt, pt_len, ct, ct_len)
@@ -382,6 +433,7 @@ fn concat_u8(first: &[u8], second: &[u8]) -> Vec<u8> {
     [first, second].concat()
 }
 
+// get any error that may have occured from an olm session
 fn session_error(s: *mut OlmSession) -> Option<String> {
     let err_str: String;
 
