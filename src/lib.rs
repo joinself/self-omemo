@@ -3,5 +3,6 @@
 #![allow(non_snake_case)]
 #![allow(improper_ctypes)]
 
+// include all of the other modules in the library
 pub mod message;
 pub mod omemo;

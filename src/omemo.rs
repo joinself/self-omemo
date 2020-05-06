@@ -389,10 +389,10 @@ fn session_error(s: *mut OlmSession) -> Option<String> {
         let err = olm_session_last_error(s);
         let err_str_cnv = CStr::from_ptr(err).to_str();
         err_str = String::from(err_str_cnv.unwrap());
-        println!("OLM {:?}", err_str);
     }
 
     if err_str != "SUCCESS" {
+        println!("OLM {:?}", err_str);
         return Some(err_str);
     }
 
