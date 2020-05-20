@@ -2,12 +2,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <olm/olm.h>
 
 typedef struct GroupSession GroupSession;
 
 void omemo_add_group_participant(GroupSession *gs, const char *id, OlmSession *s);
 
-GroupSession *omemo_create_group_session(const char *id);
+GroupSession *omemo_create_group_session(void);
 
 size_t omemo_decrypt(GroupSession *gs,
                      const char *id,
@@ -27,3 +28,5 @@ size_t omemo_encrypt(GroupSession *gs,
                      size_t ct_len);
 
 size_t omemo_encrypted_size(GroupSession *gs, size_t pt_len);
+
+void omemo_set_identity(GroupSession *gs, const char *id);

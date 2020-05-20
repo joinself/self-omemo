@@ -1,1 +1,2 @@
 language = "C"
+sys_includes = ["olm/olm.h"]

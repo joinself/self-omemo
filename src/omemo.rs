@@ -16,7 +16,7 @@ use crate::message::{Message, GroupMessage, decode_group_message};
 // the id is used to determine which key to use
 // when decrypting a message
 pub struct GroupSession{
-    id: String,
+    id: Option<String>,
     participants: Vec<Participant>,
 }
 
@@ -29,7 +29,16 @@ struct Participant {
 
 impl GroupSession {
     // creates a new boxed group session allocated on the heap
-    pub fn new(id: *mut i8) -> *mut GroupSession {
+    pub fn new() -> *mut GroupSession {
+        let gs = GroupSession{
+            id: None,
+            participants: Vec::new(),
+        };
+
+        return Box::into_raw(Box::new(gs))
+    }
+
+    pub fn set_identity(&mut self, id: *mut i8) {
         let idstr: CString;
 
         unsafe {
@@ -40,12 +49,7 @@ impl GroupSession {
             idstr = CString::from_raw(id);
         }
 
-        let gs = GroupSession{
-            id: idstr.into_string().unwrap(),
-            participants: Vec::new(),
-        };
-
-        return Box::into_raw(Box::new(gs))
+        self.id = Some(idstr.into_string().unwrap())
     }
 
     // add a participcant and their session to the group session
@@ -63,6 +67,7 @@ impl GroupSession {
         let pid = idstr.into_string();
 
         if pid.is_err() {
+            println!("error: {}", pid.unwrap_err().to_string());
             return 1;
         };
 
@@ -86,6 +91,7 @@ impl GroupSession {
 
         let pt = String::from_utf8(vec![b'X'; pt_sz]);
         if pt.is_err() {
+            println!("error: could not generate a placeholder ciphertext");
             return 0;
         }
 
@@ -110,6 +116,7 @@ impl GroupSession {
             // create mock recipient key
             let ky = String::from_utf8(vec![b'X'; enc_sz as usize]);
             if ky.is_err() {
+                println!("error: could not generate a placeholder key");
                 return 0;
             }
 
@@ -122,6 +129,7 @@ impl GroupSession {
         let res = gm.encode();
 
         if res.is_err() {
+            println!("error: {:?}", res);
             return 0;
         }
 
@@ -152,6 +160,7 @@ impl GroupSession {
         //assert!(self.encrypted_size(pt_len) > ct_len, "ciphertext buffer is not big enough");
 
         if sodiumoxide::init().is_err() {
+            println!("error: sodium is not ready");
             return 0;
         }
 
@@ -214,7 +223,7 @@ impl GroupSession {
                 let last_err = session_error(p.session);
 
                 if last_err.is_some() {
-                    println!("Error: {:?}", last_err.unwrap());
+                    println!("error: {:?}", last_err.unwrap());
                     return 0;
                 }
             }
@@ -235,7 +244,7 @@ impl GroupSession {
 
                 let last_err = session_error(p.session);
                 if last_err.is_some() {
-                    println!("Error: {:?}", last_err.unwrap());
+                    println!("error: {:?}", last_err.unwrap());
                     return 0;
                 }
             }
@@ -274,6 +283,7 @@ impl GroupSession {
 
         let pidstr = idstr.into_string();
         if pidstr.is_err() {
+            println!("error: {:?}", pidstr.unwrap());
             return 0;
         };
 
@@ -282,6 +292,7 @@ impl GroupSession {
         // get the index of the senders session
         let sp = self.participants.iter().position(|p| p.id == pid);
         if sp.is_none() {
+            println!("error: participant not found in group session");
             return 0;
         }
 
@@ -297,9 +308,20 @@ impl GroupSession {
 
         let gm = dgm.unwrap();
 
+        if self.id.is_none() {
+            println!("error: group session identity has not been set");
+            return 0;
+        }
+
         // get the encrypted ciphertext key from the header
-        let mh = gm.recipients.get(&self.id);
+        let mut mh: Option<&Message> = None;
+
+        if let Some(ref cid) = self.id {
+            mh = gm.recipients.get(cid);
+        }
+
         if mh.is_none() {
+            println!("error: message is not intended for this identity");
             return 0;
         }
 
@@ -324,6 +346,7 @@ impl GroupSession {
 
         let mut last_err = session_error(s);
         if last_err.is_some() {
+            println!("error: {:?}", last_err.unwrap());
             return 0;
         }
 
@@ -344,6 +367,7 @@ impl GroupSession {
 
         last_err = session_error(s);
         if last_err.is_some() {
+            println!("error: {:?}", last_err.unwrap());
             return 0;
         }
 
@@ -365,6 +389,7 @@ impl GroupSession {
         // decode the group messages ciphertext from base64
         let dec = decode_config(gm.ciphertext, base64::STANDARD_NO_PAD);
         if dec.is_err() {
+            println!("error: {:?}", dec.unwrap());
             return 0;
         }
 
@@ -388,8 +413,14 @@ impl GroupSession {
 
 // creates a group session that allocated on the heap
 #[no_mangle]
-pub unsafe extern "C" fn omemo_create_group_session(id: *const c_char) -> *mut GroupSession {
-    return GroupSession::new(id as *mut i8);
+pub unsafe extern "C" fn omemo_create_group_session() -> *mut GroupSession {
+    return GroupSession::new();
+}
+
+// creates a group session that allocated on the heap
+#[no_mangle]
+pub unsafe extern "C" fn omemo_set_identity(gs: *mut GroupSession, id: *const c_char) {
+    (*gs).set_identity(id as *mut i8);
 }
 
 // destroy a group session by consuming the box
@@ -444,7 +475,7 @@ fn session_error(s: *mut OlmSession) -> Option<String> {
     }
 
     if err_str != "SUCCESS" {
-        println!("OLM {:?}", err_str);
+        // println!("OLM {:?}", err_str);
         return Some(err_str);
     }
 

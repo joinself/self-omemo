@@ -35,8 +35,9 @@ fn main() {
         .expect("Couldn't write bindings!");
 
     // generate c header bindings
+    // NOTE: if it fails to update the header file, comment this out,
+    // run cargo build, then uncomment and run cargo build again.
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-
     cbindgen::Builder::new()
       .with_crate(crate_dir)
       .with_config(cbindgen::Config::from_file("cbindgen.toml").unwrap())
