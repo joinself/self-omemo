@@ -4,7 +4,7 @@ extern crate base64;
 include!(concat!(env!("OUT_DIR"), "/olm.rs"));
 
 use std::slice;
-use std::ffi::{CString, CStr};
+use std::ffi::{CStr};
 use std::os::raw::c_char;
 use std::ptr;
 use base64::{encode_config, decode_config};
@@ -38,41 +38,34 @@ impl GroupSession {
         return Box::into_raw(Box::new(gs))
     }
 
-    pub fn set_identity(&mut self, id: *mut i8) {
-        let idstr: CString;
+    pub fn set_identity(&mut self, id: *const i8) {
+        let identity: String;
 
         unsafe {
-            // takes ownership of the strings memory
-            // that is passed into this function.
-            // rust will free this memory so the caller
-            // does not have to
-            idstr = CString::from_raw(id);
+            let idstr = CStr::from_ptr(id);
+            identity = idstr.to_str().unwrap().to_string();
         }
 
-        self.id = Some(idstr.into_string().unwrap())
+        self.id = Some(identity);
     }
 
     // add a participcant and their session to the group session
-    pub fn add_participant(&mut self, id: *mut i8, s: *mut OlmSession) -> size_t {
-        let idstr: CString;
+    pub fn add_participant(&mut self, id: *const i8, s: *mut OlmSession) -> size_t {
+        let pid: String;
 
         unsafe {
-            // takes ownership of the strings memory
-            // that is passed into this function.
-            // rust will free this memory so the caller
-            // does not have to
-            idstr = CString::from_raw(id);
+            let idstr = CStr::from_ptr(id).to_str();
+
+            if idstr.is_err() {
+                println!("error: {}", idstr.unwrap_err().to_string());
+                return 1;
+            };
+
+            pid = idstr.unwrap().to_string();
         }
 
-        let pid = idstr.into_string();
-
-        if pid.is_err() {
-            println!("error: {}", pid.unwrap_err().to_string());
-            return 1;
-        };
-
         self.participants.push(Participant{
-            id: String::from(pid.unwrap()),
+            id: String::from(pid),
             session: s,
         });
 
@@ -270,24 +263,19 @@ impl GroupSession {
         return result.unwrap() as size_t;
     }
 
-    pub fn decrypt(&mut self, id: *mut i8, pt: *mut u8, pt_len: size_t, ct: *const u8, ct_len: size_t) -> size_t {
-        let idstr: CString;
+    pub fn decrypt(&mut self, id: *const i8, pt: *mut u8, pt_len: size_t, ct: *const u8, ct_len: size_t) -> size_t {
+        let pid: String;
 
         unsafe {
-            // takes ownership of the strings memory
-            // that is passed into this function.
-            // rust will free this memory so the caller
-            // does not have to
-            idstr = CString::from_raw(id);
+            let idstr = CStr::from_ptr(id).to_str();
+
+            if idstr.is_err() {
+                println!("error: {}", idstr.unwrap_err().to_string());
+                return 0;
+            };
+
+            pid = idstr.unwrap().to_string();
         }
-
-        let pidstr = idstr.into_string();
-        if pidstr.is_err() {
-            println!("error: {:?}", pidstr.unwrap());
-            return 0;
-        };
-
-        let pid = pidstr.unwrap();
 
         // get the index of the senders session
         let sp = self.participants.iter().position(|p| p.id == pid);
@@ -433,7 +421,7 @@ pub unsafe extern "C" fn omemo_destroy_group_session(gs: *mut GroupSession) {
 // add a participant to a group session
 #[no_mangle]
 pub unsafe extern "C" fn omemo_add_group_participant(gs: *mut GroupSession, id: *const c_char, s: *mut OlmSession) {
-    (*gs).add_participant(id as *mut i8 , s);
+    (*gs).add_participant(id, s);
 }
 
 // get the size of an encrypted message from the plaintext size
@@ -457,7 +445,7 @@ pub unsafe extern "C" fn omemo_encrypt(gs: *mut GroupSession, pt: *const u8, pt_
 // decrypt a message from one of the recipients in the group session
 #[no_mangle]
 pub unsafe extern "C" fn omemo_decrypt(gs: *mut GroupSession, id: *const c_char, pt: *mut u8, pt_len: size_t, ct: *const u8, ct_len: size_t) -> size_t {
-    return (*gs).decrypt(id as *mut i8, pt, pt_len, ct, ct_len)
+    return (*gs).decrypt(id, pt, pt_len, ct, ct_len)
 }
 
 fn concat_u8(first: &[u8], second: &[u8]) -> Vec<u8> {

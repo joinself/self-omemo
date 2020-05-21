@@ -161,12 +161,3 @@ int main () {
     return 0;
 }
 ```
-
-
-### C strings
-
-Note: rust takes ownership of the memory that gets passed to it for any c string.
-      this means that the caller does not need to free this memory. This is only
-      the case for the id's of participants, as well as the string thats passed
-      in when creatin the group session. If this causes issues, this can easily
-      be changed.
