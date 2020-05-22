@@ -27,6 +27,48 @@ cargo build --release
 
 This will produce a shared library specific to your platform, as well as generate headers for the library.
 
+If you are building for mobile, you should perform these additional steps
+
+1. install the android sdk and ndk to your home path: https://developer.android.com/ndk
+2. add the compile targets via rustup
+```sh
+rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+```
+3. download github.com/aldgate-ventures/self-olm
+
+4. follow instructions inside of `self-olm` to build for android. This should mean setting `android/local.properties` to `ndk.dir=/home/tom/android-sdk/ndk-bundle` and running `./gradlew assemble`.
+
+5. grab the compiled artifacts and copy them to `/usr/local/`:
+```sh
+cp android/olm-sdk/src/main/libs/* /usr/local/lib/
+```
+
+6. configure cargo to point to the ndk path. add the following to `~/.cargo/config`:
+```sh
+[target.aarch64-linux-android]
+ar = "/home/tom/android-sdk/ndk-bundle/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-ar"
+linker = "/home/tom/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
+[target.armv7-linux-androideabi]
+ar = "/home/tom/android-sdk/ndk-bundle/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi-ar"
+linker = "/home/tom/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang"
+[target.i686-linux-android]
+ar = "/home/tom/android-sdk/ndk-bundle/toolchains/x86-4.9/prebuilt/linux-x86_64/bin/i686-linux-android-ar"
+linker = "/home/tom/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android21-clang"
+[target.x86_64-linux-android]
+ar = "/home/tom/android-sdk/ndk-bundle/toolchains/x86_64-4.9/prebuilt/linux-x86_64/bin/x86_64-linux-android-ar"
+linker = "/home/tom/android-sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang"
+```
+7. in the project root, build for each target:
+```sh
+cargo build --release --target aarch64-linux-android && \
+cargo build --release --target armv7-linux-androideabi && \
+cargo build --release --target x86_64-linux-android && \
+cargo build --release --target i686-linux-android
+```
+
+Build artifacts will be output in `target/$ARCH/rls/` or `target/$ARCH/debug` if building a debug build.
+
+
 ## Installing
 
 You will need to copy the two generated artifacts to an install path, as follows:
@@ -59,7 +101,9 @@ int main () {
     // create a group session
     char my_identity[] = "myID:myDevice";
 
-    gs = omemo_create_group_session(my_identity);
+    gs = omemo_create_group_session();
+
+    omemo_set_identity(gs, my_identity);
 
     // setup the olm sessions from an incoming message or create a new outbound session.
     // if there are existing sessions, you should load them from persistent storage.

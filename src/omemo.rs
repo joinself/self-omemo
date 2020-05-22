@@ -92,7 +92,7 @@ impl GroupSession {
         // iterate over each participant and add a fake
         // encrypted key as its value
         for p in &self.participants {
-            let enc_sz: u64;
+            let enc_sz: size_t;
 
             // get the size of the ciphertext thats encrypted
             // by the olm session. the olm session
@@ -165,15 +165,15 @@ impl GroupSession {
 
             // create group message key
             crypto_aead_xchacha20poly1305_ietf_keygen(kb.as_mut_ptr());
-            randombytes_buf(nb.as_mut_ptr() as *mut libc::c_void, 24 as c_ulonglong);
+            randombytes_buf(nb.as_mut_ptr() as *mut libc::c_void, 24 as size_t);
 
             crypto_aead_xchacha20poly1305_ietf_encrypt(
                 ctb.as_mut_ptr(),
                 &mut ctbl,
                 pt,
-                pt_len,
+                pt_len as u64,
                 ptr::null(),
-                0 as c_ulonglong,
+                0 as u64,
                 ptr::null_mut(),
                 nb.as_mut_ptr(),
                 kb.as_mut_ptr(),
@@ -193,8 +193,8 @@ impl GroupSession {
         // encrypt group message key with participants olm sessions
         for p in &self.participants {
             // get the message type and size of random needed to encrypt
-            let mtype: u64;
-            let rand_sz: u64;
+            let mtype: size_t;
+            let rand_sz: size_t;
 
             // determine the type of olm message and the size of the random seed
             // if the session is new and no messages have been sent to the recipient
@@ -215,7 +215,7 @@ impl GroupSession {
                 }
             }
 
-            let mut ct_sz: u64;
+            let mut ct_sz: size_t;
 
             unsafe {
                 // get the actual size of the encrypted key
@@ -239,7 +239,7 @@ impl GroupSession {
                 ct_sz = olm_encrypt(
                     p.session,
                     grp_pt.as_mut_ptr() as *mut libc::c_void,
-                    grp_pt.len() as u64,
+                    grp_pt.len() as size_t,
                     rand_buf.as_mut_ptr() as *mut libc::c_void,
                     rand_sz,
                     ct_buf.as_mut_ptr() as *mut libc::c_void,
@@ -266,7 +266,7 @@ impl GroupSession {
         }
 
         // copy encoded json to ciphertext buffer
-        let result = gm.encode_to_buffer(ct, ct_len);
+        let result = gm.encode_to_buffer(ct, ct_len as usize);
         if result.is_err() {
             return 0;
         }
@@ -391,9 +391,9 @@ impl GroupSession {
                 &mut ptl,
                 ptr::null_mut(),
                 dec_ct.as_mut_ptr(),
-                dec_ct.len() as c_ulonglong,
+                dec_ct.len() as u64,
                 ptr::null_mut(),
-                0 as c_ulonglong,
+                0 as u64,
                 ptk_buf[32..56].as_ptr(),
                 ptk_buf[0..32].as_ptr(),
             );

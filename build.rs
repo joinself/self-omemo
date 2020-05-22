@@ -8,11 +8,20 @@ fn main() {
     // Tell cargo to tell rustc to link the system olm
     // shared library.
 
-    println!("cargo:rustc-link-search=/usr/local/lib");
-    println!("cargo:rustc-link-search=/usr/local/lib/arm64-v8a");
-    println!("cargo:rustc-link-search=/usr/local/lib/armeabi-v7a");
-    println!("cargo:rustc-link-search=/usr/local/lib/x86");
-    println!("cargo:rustc-link-search=/usr/local/lib/x86_64");
+    let target = env::var("TARGET").unwrap();
+
+    if target == "" {
+        println!("cargo:rustc-link-search=/usr/local/lib");
+    } else if target == "aarch64-linux-android" {
+        println!("cargo:rustc-link-search=/usr/local/lib/arm64-v8a");
+    } else if target == "armv7-linux-androideabi" {
+        println!("cargo:rustc-link-search=/usr/local/lib/armeabi-v7a");
+    } else if target == "i686-linux-android" {
+        println!("cargo:rustc-link-search=/usr/local/lib/x86");
+    } else if target == "x86_64-linux-android" {
+        println!("cargo:rustc-link-search=/usr/local/lib/x86_64");
+    }
+
     println!("cargo:rustc-link-lib=olm");
     println!("cargo:rustc-link-lib=sodium");
 

@@ -65,7 +65,7 @@ impl GroupMessage{
 
     // Result is a tuple that gets returned that wrap an value or an error. It's similar to returning (value, error) in go
     // you can call .is_err() to check if there is an error, or you can .unwrap() the result to get the value
-    pub fn encode_to_buffer(&self, buf: *mut u8, buf_len: u64) -> Result<size_t>{
+    pub fn encode_to_buffer(&self, buf: *mut u8, buf_len: usize) -> Result<size_t>{
         let j = serde_json::to_vec(self);
 
         if j.is_err() {
@@ -77,7 +77,7 @@ impl GroupMessage{
         // this is an assertion that will panic if not true
         // the 'as' syntax is used to cast from one type to another
         // in this case, its casting from u64 -> usize
-        assert!(buf_len as usize >= result.len(), "buffer size is too small");
+        assert!(buf_len >= result.len(), "buffer size is too small");
 
         // rust enforces strict guarantees around memory safety.
         // the compiler will check that the memory you are accessing is valid
