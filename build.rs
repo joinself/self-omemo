@@ -7,6 +7,12 @@ use std::path::PathBuf;
 fn main() {
     // Tell cargo to tell rustc to link the system olm
     // shared library.
+
+    println!("cargo:rustc-link-search=/usr/local/lib");
+    println!("cargo:rustc-link-search=/usr/local/lib/arm64-v8a");
+    println!("cargo:rustc-link-search=/usr/local/lib/armeabi-v7a");
+    println!("cargo:rustc-link-search=/usr/local/lib/x86");
+    println!("cargo:rustc-link-search=/usr/local/lib/x86_64");
     println!("cargo:rustc-link-lib=olm");
     println!("cargo:rustc-link-lib=sodium");
 
