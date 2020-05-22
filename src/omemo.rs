@@ -3,12 +3,11 @@ extern crate base64;
 
 include!(concat!(env!("OUT_DIR"), "/olm.rs"));
 
-use std::slice;
 use std::ffi::{CStr};
 use std::os::raw::c_char;
 use std::ptr;
+use libc::c_ulonglong;
 use base64::{encode_config, decode_config};
-use sodiumoxide::crypto::aead::xchacha20poly1305_ietf;
 use crate::message::{Message, GroupMessage, decode_group_message};
 
 // GroupSession holds all of the participants of a session,
@@ -38,7 +37,7 @@ impl GroupSession {
         return Box::into_raw(Box::new(gs))
     }
 
-    pub fn set_identity(&mut self, id: *const i8) {
+    pub fn set_identity(&mut self, id: *const c_char) {
         let identity: String;
 
         unsafe {
@@ -50,7 +49,7 @@ impl GroupSession {
     }
 
     // add a participcant and their session to the group session
-    pub fn add_participant(&mut self, id: *const i8, s: *mut OlmSession) -> size_t {
+    pub fn add_participant(&mut self, id: *const c_char, s: *mut OlmSession) -> size_t {
         let pid: String;
 
         unsafe {
@@ -152,24 +151,36 @@ impl GroupSession {
         assert!(!ct.is_null(), "ciphertext buffer must not be null");
         //assert!(self.encrypted_size(pt_len) > ct_len, "ciphertext buffer is not big enough");
 
-        if sodiumoxide::init().is_err() {
-            println!("error: sodium is not ready");
-            return 0;
-        }
-
-        // convert the c plaintext to a rust slice
-        let pt_buf: &[u8];
+        // setup message ciphertext, key and nonce buffer
+        let mut ctb: Vec<u8> = vec![0; (pt_len + 16) as usize];
+        let mut ctbl = ctb.len() as c_ulonglong;
+        let mut kb: Vec<u8> = vec![0; 32 as usize];
+        let mut nb: Vec<u8> = vec![0; 24 as usize];
 
         unsafe {
-            // create a slice from the plaintext buffer
-            pt_buf = slice::from_raw_parts(pt, pt_len as usize);
+            if sodium_init() == -1 {
+                println!("error: sodium is not ready");
+                return 0;
+            }
+
+            // create group message key
+            crypto_aead_xchacha20poly1305_ietf_keygen(kb.as_mut_ptr());
+            randombytes_buf(nb.as_mut_ptr() as *mut libc::c_void, 24 as c_ulonglong);
+
+            crypto_aead_xchacha20poly1305_ietf_encrypt(
+                ctb.as_mut_ptr(),
+                &mut ctbl,
+                pt,
+                pt_len,
+                ptr::null(),
+                0 as c_ulonglong,
+                ptr::null_mut(),
+                nb.as_mut_ptr(),
+                kb.as_mut_ptr(),
+            );
+
+            ctb.set_len(ctbl as usize);
         }
-
-        // create group message key
-        let k = xchacha20poly1305_ietf::gen_key();
-        let n = xchacha20poly1305_ietf::gen_nonce();
-
-        let ctb = xchacha20poly1305_ietf::seal(pt_buf, None, &n, &k);
 
         // encode the ciphertext to base64
         let enc_ct = encode_config(ctb, base64::STANDARD_NO_PAD);
@@ -177,7 +188,7 @@ impl GroupSession {
         let mut gm = GroupMessage::new(enc_ct);
 
         // join the key and nonce together
-        let mut grp_pt = concat_u8(k.as_ref(), n.as_ref());
+        let mut grp_pt = concat_u8(kb.as_ref(), nb.as_ref());
 
         // encrypt group message key with participants olm sessions
         for p in &self.participants {
@@ -263,7 +274,7 @@ impl GroupSession {
         return result.unwrap() as size_t;
     }
 
-    pub fn decrypt(&mut self, id: *const i8, pt: *mut u8, pt_len: size_t, ct: *const u8, ct_len: size_t) -> size_t {
+    pub fn decrypt(&mut self, id: *const c_char, pt: *mut u8, pt_len: size_t, ct: *const u8, ct_len: size_t) -> size_t {
         let pid: String;
 
         unsafe {
@@ -359,21 +370,6 @@ impl GroupSession {
             return 0;
         }
 
-        // convert the raw key and nonce into a xchacha20poly1305 key and nonce
-        let pt_key = xchacha20poly1305_ietf::Key::from_slice(&ptk_buf[0..32]);
-        if pt_key.is_none() {
-            return 0;
-        }
-
-        let key = pt_key.unwrap();
-
-        let pt_nonce = xchacha20poly1305_ietf::Nonce::from_slice(&ptk_buf[32..56]);
-        if pt_nonce.is_none() {
-            return 0;
-        }
-
-        let nonce = pt_nonce.unwrap();
-
         // decode the group messages ciphertext from base64
         let dec = decode_config(gm.ciphertext, base64::STANDARD_NO_PAD);
         if dec.is_err() {
@@ -381,21 +377,34 @@ impl GroupSession {
             return 0;
         }
 
-        let dec_ct = dec.unwrap();
+        let mut dec_ct = dec.unwrap();
+        let mut ptl = pt_len as c_ulonglong;
 
-        let dec_pt_result = xchacha20poly1305_ietf::open(&dec_ct[..], None, &nonce, &key);
-        if dec_pt_result.is_err() {
-            return 0;
-        }
-
-        let mut dec_pt = dec_pt_result.unwrap();
-
-        // TODO : check pt buffer is big enough
         unsafe {
-            ptr::copy(dec_pt.as_mut_ptr(), pt, pt_len as usize);
+            if sodium_init() == -1 {
+                println!("error: sodium is not ready");
+                return 0;
+            }
+
+            let ret = crypto_aead_xchacha20poly1305_ietf_decrypt(
+                pt,
+                &mut ptl,
+                ptr::null_mut(),
+                dec_ct.as_mut_ptr(),
+                dec_ct.len() as c_ulonglong,
+                ptr::null_mut(),
+                0 as c_ulonglong,
+                ptk_buf[32..56].as_ptr(),
+                ptk_buf[0..32].as_ptr(),
+            );
+
+            if ret != 0 {
+                println!("error: decrypt failed");
+                return 0;
+            }
         }
 
-        return dec_pt.len() as size_t;
+        return ptl as size_t;
     }
 }
 
@@ -408,7 +417,7 @@ pub unsafe extern "C" fn omemo_create_group_session() -> *mut GroupSession {
 // creates a group session that allocated on the heap
 #[no_mangle]
 pub unsafe extern "C" fn omemo_set_identity(gs: *mut GroupSession, id: *const c_char) {
-    (*gs).set_identity(id as *mut i8);
+    (*gs).set_identity(id);
 }
 
 // destroy a group session by consuming the box
