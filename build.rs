@@ -11,7 +11,7 @@ fn main() {
     let target = env::var("TARGET").unwrap();
 
     if target == "" {
-        println!("cargo:rustc-link-search=/usr/local/lib");
+        println!("cargo:rustc-link-search=/usr/lib");
     } else if target == "aarch64-linux-android" {
         println!("cargo:rustc-link-search=/usr/local/lib/arm64-v8a");
     } else if target == "armv7-linux-androideabi" {
@@ -22,7 +22,7 @@ fn main() {
         println!("cargo:rustc-link-search=/usr/local/lib/x86_64");
     }
 
-    println!("cargo:rustc-link-lib=olm");
+    println!("cargo:rustc-link-lib=self_olm");
     println!("cargo:rustc-link-lib=sodium");
 
     // Tell cargo to invalidate the built crate whenever the wrapper changes

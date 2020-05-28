@@ -60,8 +60,36 @@ publish:
   function build() {
     newVersion=$(new_version)
     mkdir pkgs
-    docker run -v $PWD:/build aldgateventuresbot/rust sh -c "cd /build && wget -q http://download.selfid.net/olm/libself-olm_0.1.12_amd64.deb && apt update && apt install -y ./libself-olm_0.1.12_amd64.deb && for arch in arm64-v8a armeabi-v7a x86 x86_64; do wget -q http://download.selfid.net/olm/libself-olm-0.1.12-android-${arch}.tar.gz && tar -zxvf libself-olm-0.1.12-android-${arch}.tar.gz && mv self-olm-android-${arch} /usr/local/lib/${arch}; done; cargo build --release && cargo build --release --target aarch64-linux-android && cargo build --release --target armv7-linux-androideabi && cargo build --release --target x86_64-linux-android && cargo build --release --target i686-linux-android"
-    docker run -v $PWD:/build aldgateventuresbot/fpm sh -c "apt update && apt install -y libsodium-dev rpm && cd /build && fpm -s dir -t deb -n libself-omemo -v ${newVersion} -p pkgs --deb-no-default-config-files -d libsodium-dev ./build/libself_olm.so=/usr/lib/ ./build/libself_olm.so.3=/usr/lib/ ./build/libself_olm.so.3.1.4=/usr/lib/ ./include/self_olm/=/usr/include/self_olm && fpm -s dir -t rpm -n libself-omemo -v ${newVersion} -p pkgs -d libsodium-devel ./build/libself_olm.so=/usr/lib/ ./build/libself_olm.so.3=/usr/lib/ ./build/libself_olm.so.3.1.4=/usr/lib/ ./include/self_olm/=/usr/include/self_olm"
+
+    docker run -v $PWD:/build aldgateventuresbot/rust sh -c "cd /build && \
+    wget -q http://download.selfid.net/olm/libself-olm_0.1.14_amd64.deb && \
+    apt update && apt install -y ./libself-olm_0.1.14_amd64.deb && \
+    for arch in arm64-v8a armeabi-v7a x86 x86_64; do \
+      wget -q \"http://download.selfid.net/olm/libself-olm-0.1.14-android-\$arch.tar.gz\" && \
+      tar -zxvf \"libself-olm-0.1.14-android-\$arch.tar.gz\" && \
+      mv \"self-olm-android-\$arch\" \"/usr/local/lib/\$arch\"; \
+    done; \
+    cargo build --release && cargo build --release --target aarch64-linux-android && \
+    cargo build --release --target armv7-linux-androideabi && \
+    cargo build --release --target x86_64-linux-android && \
+    cargo build --release --target i686-linux-android && \
+    for arch in arm64-v8a armeabi-v7a x86 x86_64; do \
+      mkdir -p \"self-omemo-android-\$arch/include/\" && \
+      cp self_omemo.h \"self-omemo-android-\$arch/include/\"; \
+    done; \
+    cp /build/target/aarch64-linux-android/release/libself_omemo.so /build/self-omemo-android-arm64-v8a/ && \
+    cp /build/target/armv7-linux-androideabi/release/libself_omemo.so /build/self-omemo-android-armeabi-v7a/ && \
+    cp /build/target/i686-linux-android/release/libself_omemo.so /build/self-omemo-android-x86/ && \
+    cp /build/target/x86_64-linux-android/release/libself_omemo.so /build/self-omemo-android-x86_64/ && \
+    for arch in arm64-v8a armeabi-v7a x86 x86_64; do \
+      tar -zcvf \"/build/pkgs/libself-omemo-$newVersion-android-\$arch.tar.gz\" \"self-omemo-android-\$arch\"; \
+    done"
+
+    docker run -v $PWD:/build aldgateventuresbot/fpm sh -c "apt update && \
+    apt install -y libsodium-dev rpm && \
+    cd /build && \
+    fpm -s dir -t deb -n libself-omemo -v ${newVersion} -p pkgs --deb-no-default-config-files -d libsodium-dev ./target/release/libself_omemo.so=/usr/lib/ ./self_omemo.h=/usr/include/ && \
+    fpm -s dir -t rpm -n libself-omemo -v ${newVersion} -p pkgs -d libsodium-devel ./target/release/libself_omemo.so=/usr/lib/ ./self_omemo.h/=/usr/include/"
   }
 
   function setup_git() {
@@ -87,7 +115,7 @@ publish:
   function publish() {
     echo $GCP_SA_CI | base64 -d > /tmp/gcp-sa-ci.json
     gcloud auth activate-service-account --key-file /tmp/gcp-sa-ci.json
-    gsutil cp pkgs/libself-olm* gs://download.selfid.net/olm
+    gsutil cp pkgs/libself-omemo* gs://download.selfid.net/omemo
   }
 
   function slack_notify() {
