@@ -215,7 +215,7 @@ impl GroupSession {
                 }
             }
 
-            let mut ct_sz: size_t;
+            let ct_sz: size_t;
 
             unsafe {
                 // get the actual size of the encrypted key
@@ -236,7 +236,7 @@ impl GroupSession {
             let mut ct_buf: Vec<u8> = vec![0; ct_sz as usize];
 
             unsafe {
-                ct_sz = olm_encrypt(
+                olm_encrypt(
                     p.session,
                     grp_pt.as_mut_ptr() as *mut libc::c_void,
                     grp_pt.len() as size_t,
