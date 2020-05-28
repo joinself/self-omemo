@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <olm/olm.h>
+#include <self_olm/olm.h>
 
 typedef struct GroupSession GroupSession;
 
