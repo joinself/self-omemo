@@ -88,6 +88,10 @@ publish:
     docker run -v $PWD:/build aldgateventuresbot/fpm sh -c "apt update && \
     apt install -y libsodium-dev rpm && \
     cd /build && \
+    mkdir -p self-omemo-linux-x86_64/include/ && \
+    cp self_omemo.h /build/self-omemo-linux-x86_64/include/ && \
+    cp ./target/release/libself_omemo.so /build/self-omemo-linux-x86_64 && \
+    tar -zcvf /build/pkgs/libself-omemo-$newVersion-linux-x86_64.tar.gz self-omemo-linux-x86_64 && \
     fpm -s dir -t deb -n libself-omemo -v ${newVersion} -p pkgs --deb-no-default-config-files -d libsodium-dev ./target/release/libself_omemo.so=/usr/lib/ ./self_omemo.h=/usr/include/ && \
     fpm -s dir -t rpm -n libself-omemo -v ${newVersion} -p pkgs -d libsodium-devel ./target/release/libself_omemo.so=/usr/lib/ ./self_omemo.h/=/usr/include/"
   }
