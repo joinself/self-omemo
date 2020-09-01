@@ -62,10 +62,10 @@ publish:
     mkdir pkgs
 
     docker run -v $PWD:/build aldgateventuresbot/rust sh -c "cd /build && \
-    wget -q http://download.selfid.net/olm/libself-olm_0.1.14_amd64.deb && \
+    wget -q https://download.joinself.com/olm/libself-olm_0.1.14_amd64.deb && \
     apt update && apt install -y ./libself-olm_0.1.14_amd64.deb && \
     for arch in arm64-v8a armeabi-v7a x86 x86_64; do \
-      wget -q \"http://download.selfid.net/olm/libself-olm-0.1.14-android-\$arch.tar.gz\" && \
+      wget -q \"https://download.joinself.com/olm/libself-olm-0.1.14-android-\$arch.tar.gz\" && \
       tar -zxvf \"libself-olm-0.1.14-android-\$arch.tar.gz\" && \
       mv \"self-olm-android-\$arch\" \"/usr/local/lib/\$arch\"; \
     done; \
@@ -119,7 +119,7 @@ publish:
   function publish() {
     echo $GCP_SA_CI | base64 -d > /tmp/gcp-sa-ci.json
     gcloud auth activate-service-account --key-file /tmp/gcp-sa-ci.json
-    gsutil cp pkgs/libself-omemo* gs://download.selfid.net/omemo
+    gsutil cp pkgs/libself-omemo* gs://download-29ea2c/omemo
   }
 
   function slack_notify() {
