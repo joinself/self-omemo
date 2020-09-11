@@ -3,8 +3,9 @@ variables:
   DOCKER_TLS_CERTDIR: ""
 
 stages:
-  - Build
-  - Publish
+  - pre-build
+  - build
+  - publish
 
 .build: &build |
   mkdir pkgs
@@ -52,8 +53,20 @@ before_script:
   - export SCRIPTS_DIR=$(mktemp -d)
   - git clone -q --depth 1 "${SCRIPTS_REPO}" "${SCRIPTS_DIR}"
 
+license-check:
+  stage: pre-build
+  image: docker:stable-git
+  services:
+    - docker:19.03.2-dind
+  script:
+    - ${SCRIPTS_DIR}/git-setup
+    - ${SCRIPTS_DIR}/license-check
+  allow_failure: true
+  only:
+    - branches
+
 build:
-  stage: Build
+  stage: build
   image: aldgateventuresbot/deploy
   services:
     - docker:19.03.2-dind
@@ -67,7 +80,7 @@ build:
     - branches
 
 publish:
-  stage: Publish
+  stage: publish
   image: aldgateventuresbot/deploy
   script:
     - ${SCRIPTS_DIR}/git-setup
