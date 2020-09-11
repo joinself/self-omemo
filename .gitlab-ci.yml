@@ -7,6 +7,11 @@ stages:
   - build
   - publish
 
+.license-check: &license-check |
+  git clone https://${GITHUB_TOKEN}:@github.com/aldgate-ventures/license-finder.git
+  source ~/.profile
+  license_finder --decisions_file ./license-finder/dependency_decisions.yml
+
 .build: &build |
   mkdir pkgs
 
@@ -55,12 +60,10 @@ before_script:
 
 license-check:
   stage: pre-build
-  image: docker:stable-git
-  services:
-    - docker:19.03.2-dind
+  image: licensefinder/license_finder
   script:
     - ${SCRIPTS_DIR}/git-setup
-    - ${SCRIPTS_DIR}/license-check
+    - *license-check
   allow_failure: true
   only:
     - branches
