@@ -75,6 +75,7 @@ build:
     - docker:19.03.2-dind
   script:
     - version=$(${SCRIPTS_DIR}/git-new-version)
+    - ${SCRIPTS_DIR}/docker-registry-setup
     - *build
   artifacts:
     paths:
