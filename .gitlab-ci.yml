@@ -15,7 +15,7 @@ stages:
 .build: &build |
   mkdir pkgs
 
-  docker run -v $PWD:/build aldgateventuresbot/rust sh -c "cd /build && \
+  docker run -v $PWD:/build eu.gcr.io/principal-oxide-204416/rust-build sh -c "cd /build && \
   wget -q https://download.joinself.com/olm/libself-olm_0.1.14_amd64.deb && \
   apt update && apt install -y ./libself-olm_0.1.14_amd64.deb && \
   for arch in arm64-v8a armeabi-v7a x86 x86_64; do \
@@ -39,7 +39,7 @@ stages:
     tar -zcvf \"/build/pkgs/libself-omemo-${version}-android-\$arch.tar.gz\" \"self-omemo-android-\$arch\"; \
   done"
 
-  docker run -v $PWD:/build aldgateventuresbot/fpm sh -c "apt update && \
+  docker run -v $PWD:/build eu.gcr.io/principal-oxide-204416/fpm sh -c "apt update && \
   apt install -y libsodium-dev rpm && \
   cd /build && \
   mkdir -p self-omemo-linux-x86_64/include/ && \
@@ -70,7 +70,7 @@ license-check:
 
 build:
   stage: build
-  image: aldgateventuresbot/deploy
+  image: eu.gcr.io/principal-oxide-204416/deploy
   services:
     - docker:19.03.2-dind
   script:
@@ -84,7 +84,7 @@ build:
 
 publish:
   stage: publish
-  image: aldgateventuresbot/deploy
+  image: eu.gcr.io/principal-oxide-204416/deploy
   script:
     - ${SCRIPTS_DIR}/git-setup
     - version=$(${SCRIPTS_DIR}/git-new-version)
