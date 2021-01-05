@@ -20,6 +20,10 @@ fn main() {
         println!("cargo:rustc-link-search=/usr/local/lib/x86");
     } else if target == "x86_64-linux-android" {
         println!("cargo:rustc-link-search=/usr/local/lib/x86_64");
+    } else if target == "aarch64-apple-ios" {
+        println!("cargo:rustc-link-search=/usr/local/lib/ios64");
+    } else if target == "x86_64-apple-ios" {
+        println!("cargo:rustc-link-search=/usr/local/lib/ios64");
     }
 
     println!("cargo:rustc-link-lib=self_olm");

@@ -7,7 +7,7 @@ build = "build.rs"
 
 [lib]
 name = "self_omemo"
-crate-type = ["cdylib"]
+crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
 libc = "0.2"
