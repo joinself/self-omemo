@@ -52,7 +52,7 @@ stages:
 .publish: &publish |
   echo $GCP_SA_CI | base64 -d > /tmp/gcp-sa-ci.json
   gcloud auth activate-service-account --key-file /tmp/gcp-sa-ci.json
-  gsutil cp pkgs/libself-omemo* gs://download-29ea2c/omemo
+  gsutil cp pkgs/libself-omemo* gs://download.joinself.com/omemo
 
 before_script:
   - export SCRIPTS_DIR=$(mktemp -d)
