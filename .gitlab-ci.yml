@@ -89,7 +89,7 @@ publish:
   script:
     - ${SCRIPTS_DIR}/git-setup
     - version=$(${SCRIPTS_DIR}/git-new-version)
-    - ${SCRIPTS_DIR}/git-release ${version}
+    - ${SCRIPTS_DIR}/git-release -v ${version}
     - ${SCRIPTS_DIR}/slack-release-notification -v ${version}
     - *publish
   only:
