@@ -8,7 +8,7 @@ In order to build this library, you must have:
 
 - [rust](https://rust-lang.org)
 - [clang](https://releases.llvm.org/download.html)
-- [olm](https://github.com/aldgate-ventures/olm)
+- [olm](https://github.com/joinself/self-olm)
 - [libsodium](https://github.com/jedisct1/libsodium)
 
 ## Building
@@ -34,7 +34,7 @@ If you are building for mobile, you should perform these additional steps
 ```sh
 rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
 ```
-3. download github.com/aldgate-ventures/self-olm
+3. download github.com/joinself/self-olm
 
 4. follow instructions inside of `self-olm` to build for android. This should mean setting `android/local.properties` to `ndk.dir=/home/tom/android-sdk/ndk-bundle` and running `./gradlew assemble`.
 
