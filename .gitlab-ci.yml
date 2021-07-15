@@ -39,7 +39,7 @@ stages:
     tar -zcvf \"/build/pkgs/libself-omemo-${version}-android-\$arch.tar.gz\" \"self-omemo-android-\$arch\"; \
   done"
 
-  docker run -v $PWD:/build eu.gcr.io/principal-oxide-204416/fpm sh -c "apt update && \
+  docker run -e DEBIAN_FRONTEND=noninteractive -v $PWD:/build eu.gcr.io/principal-oxide-204416/fpm sh -c "apt update && \
   apt install -y libsodium-dev rpm && \
   cd /build && \
   mkdir -p self-omemo-linux-x86_64/include/ && \
