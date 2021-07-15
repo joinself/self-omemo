@@ -70,7 +70,7 @@ license-check:
 
 build:
   stage: build
-  image: eu.gcr.io/principal-oxide-204416/deploy
+  image: eu.gcr.io/principal-oxide-204416/tools
   services:
     - docker:19.03.2-dind
   script:
@@ -85,7 +85,7 @@ build:
 
 publish:
   stage: publish
-  image: eu.gcr.io/principal-oxide-204416/deploy
+  image: eu.gcr.io/principal-oxide-204416/tools
   script:
     - ${SCRIPTS_DIR}/git-setup
     - version=$(${SCRIPTS_DIR}/git-new-version)
