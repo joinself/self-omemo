@@ -39,7 +39,7 @@ stages:
     tar -zcvf \"/build/pkgs/libself-omemo-${version}-android-\$arch.tar.gz\" \"self-omemo-android-\$arch\"; \
   done"
 
-  docker run -v $PWD:/build eu.gcr.io/principal-oxide-204416/fpm sh -c "apt update && \
+  docker run -e DEBIAN_FRONTEND=noninteractive -v $PWD:/build eu.gcr.io/principal-oxide-204416/fpm sh -c "apt update && \
   apt install -y libsodium-dev rpm && \
   cd /build && \
   mkdir -p self-omemo-linux-x86_64/include/ && \
@@ -70,7 +70,7 @@ license-check:
 
 build:
   stage: build
-  image: eu.gcr.io/principal-oxide-204416/deploy
+  image: eu.gcr.io/principal-oxide-204416/tools
   services:
     - docker:19.03.2-dind
   script:
@@ -85,7 +85,7 @@ build:
 
 publish:
   stage: publish
-  image: eu.gcr.io/principal-oxide-204416/deploy
+  image: eu.gcr.io/principal-oxide-204416/tools
   script:
     - ${SCRIPTS_DIR}/git-setup
     - version=$(${SCRIPTS_DIR}/git-new-version)
