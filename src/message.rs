@@ -1,3 +1,5 @@
+// Copyright 2020 Self Group Ltd. All Rights Reserved.
+
 extern crate libc;
 
 use std::collections::HashMap;
