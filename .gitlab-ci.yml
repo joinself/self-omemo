@@ -68,13 +68,13 @@ license-check:
   only:
     - branches
 
-git-leak:
+secrets-check:
   stage: prebuild
   image: docker:stable-git
   services:
     - docker:19.03.2-dind
   script:
-    - docker run -v ${PWD}:/repo zricethezav/gitleaks --path=/repo --redact -v
+    - ${SCRIPTS_DIR}/git-secrets
   only:
     - branches
 
