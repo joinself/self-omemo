@@ -64,7 +64,6 @@ license-check:
   script:
     - ${SCRIPTS_DIR}/git-setup
     - *license-check
-  allow_failure: true
   only:
     - branches
 
