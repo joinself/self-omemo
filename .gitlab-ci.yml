@@ -102,4 +102,4 @@ publish:
     - ${SCRIPTS_DIR}/slack-release-notification -n joinself -v ${version}
     - *publish
   only:
-    - master
+    - main
