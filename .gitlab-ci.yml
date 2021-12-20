@@ -71,7 +71,7 @@ secrets-check:
   stage: prebuild
   image: docker:stable-git
   services:
-    - docker:19.03.2-dind
+    - docker:20.10.12-dind
   script:
     - ${SCRIPTS_DIR}/git-secrets
   only:
@@ -81,7 +81,7 @@ build:
   stage: build
   image: eu.gcr.io/principal-oxide-204416/tools
   services:
-    - docker:19.03.2-dind
+    - docker:20.10.12-dind
   script:
     - version=$(${SCRIPTS_DIR}/git-new-version)
     - ${SCRIPTS_DIR}/docker-registry-setup
