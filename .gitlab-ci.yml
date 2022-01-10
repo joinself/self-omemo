@@ -7,6 +7,11 @@ stages:
   - build
   - publish
 
+.rules:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE =~ /external_pull_request_event|web/
+
 .license-check: &license-check |
   git clone https://${GITHUB_TOKEN}:@github.com/aldgate-ventures/license-finder.git
   source ~/.profile
@@ -64,8 +69,8 @@ license-check:
   script:
     - ${SCRIPTS_DIR}/git-setup
     - *license-check
-  only:
-    - branches
+  rules:
+    - !reference [.rules, rules]
 
 secrets-check:
   stage: prebuild
@@ -74,8 +79,8 @@ secrets-check:
     - docker:20.10.12-dind
   script:
     - ${SCRIPTS_DIR}/git-secrets
-  only:
-    - branches
+  rules:
+    - !reference [.rules, rules]
 
 build:
   stage: build
@@ -89,8 +94,8 @@ build:
   artifacts:
     paths:
       - ${CI_PROJECT_DIR}/pkgs
-  only:
-    - branches
+  rules:
+    - !reference [.rules, rules]
 
 publish:
   stage: publish
@@ -101,5 +106,5 @@ publish:
     - ${SCRIPTS_DIR}/git-release -v ${version}
     - ${SCRIPTS_DIR}/slack-release-notification -n joinself -v ${version}
     - *publish
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
