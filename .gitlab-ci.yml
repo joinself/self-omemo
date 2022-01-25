@@ -1,3 +1,7 @@
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
 variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: ""
@@ -6,11 +10,6 @@ stages:
   - prebuild
   - build
   - publish
-
-.rules:
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_PIPELINE_SOURCE =~ /external_pull_request_event|web/
 
 .license-check: &license-check |
   git clone https://${GITHUB_TOKEN}:@github.com/aldgate-ventures/license-finder.git
@@ -69,8 +68,6 @@ license-check:
   script:
     - ${SCRIPTS_DIR}/git-setup
     - *license-check
-  rules:
-    - !reference [.rules, rules]
 
 secrets-check:
   stage: prebuild
@@ -79,8 +76,6 @@ secrets-check:
     - docker:20.10.12-dind
   script:
     - ${SCRIPTS_DIR}/git-secrets
-  rules:
-    - !reference [.rules, rules]
 
 build:
   stage: build
@@ -94,8 +89,6 @@ build:
   artifacts:
     paths:
       - ${CI_PROJECT_DIR}/pkgs
-  rules:
-    - !reference [.rules, rules]
 
 publish:
   stage: publish
