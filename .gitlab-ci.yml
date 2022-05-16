@@ -7,14 +7,8 @@ variables:
   DOCKER_TLS_CERTDIR: ""
 
 stages:
-  - prebuild
   - build
   - publish
-
-.license-check: &license-check |
-  git clone https://${GITHUB_TOKEN}:@github.com/aldgate-ventures/license-finder.git
-  source ~/.profile
-  license_finder --decisions_file ./license-finder/dependency_decisions.yml
 
 .build: &build |
   mkdir pkgs
@@ -62,20 +56,19 @@ before_script:
   - export SCRIPTS_DIR=$(mktemp -d)
   - git clone -q --depth 1 "${SCRIPTS_REPO}" "${SCRIPTS_DIR}"
 
-license-check:
-  stage: prebuild
+license-compliance:
+  stage: build
   image: licensefinder/license_finder
   script:
-    - ${SCRIPTS_DIR}/git-setup
-    - *license-check
+    - ${SCRIPTS_DIR}/license-check
 
-secrets-check:
-  stage: prebuild
-  image: docker:stable-git
-  services:
-    - docker:20.10.12-dind
+secret-scan:
+  stage: build
+  image:
+    name: zricethezav/gitleaks:v8.2.4
+    entrypoint: [""]
   script:
-    - ${SCRIPTS_DIR}/git-secrets
+    - ${SCRIPTS_DIR}/git-secret-scan
 
 build:
   stage: build
