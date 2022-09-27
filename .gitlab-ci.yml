@@ -58,7 +58,7 @@ before_script:
 
 license-compliance:
   stage: build
-  image: licensefinder/license_finder
+  image: joinself/license-finder:rust
   script:
     - ${SCRIPTS_DIR}/license-check
 
