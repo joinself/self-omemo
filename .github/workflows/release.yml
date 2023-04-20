@@ -1,0 +1,11 @@
+name: Release
+
+run-name: Release ${{ github.ref_name }}
+
+on:
+  workflow_dispatch:
+
+jobs:
+  version:
+    uses: joinself/github-workflows/.github/workflows/version.yml@main
+    secrets: inherit

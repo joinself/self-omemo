@@ -1,4 +1,6 @@
-# self-omemo
+# Self OMEMO
+
+[![CI](https://github.com/joinself/self-omemo/actions/workflows/ci.yml/badge.svg)](https://github.com/joinself/self-omemo/actions/workflows/ci.yml)
 
 self-olm is a library that delivers omemo group messaging ontop of matrix's olm.
 

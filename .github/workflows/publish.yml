@@ -1,0 +1,27 @@
+name: _publish
+
+on: 
+  workflow_call:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    container:
+      image: docker:cli
+    steps:
+      - name: Setup job
+        uses: joinself/github-actions-public/setup-job@main
+      - name: Publish
+        shell: bash
+        run: |
+          . ${GITHUB_WORKSPACE}/.ci/env
+
+          docker ps
+
+          #while ! timeout 1 bash -c "curl -so /dev/null docker:2375"; do echo "waiting for docker..." && sleep 2; done
+
+      - name: Failure notification
+        if: ${{ github.ref == 'refs/heads/main-disable' && failure() }}
+        uses: joinself/github-actions-public/failure-notification@main
+        with:
+          slack-webhook: ${{ secrets.SLACK_WEBHOOK_CI_ALERTS }}
