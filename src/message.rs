@@ -96,24 +96,6 @@ impl GroupMessage {
     }
 }
 
-// size_t here is not a native rust type, its a c type we need for the interface
-// its basically an architecture independent c type for representing an integer that
-// will work for both 32 and 64 bit systems
-pub unsafe fn encode_group_message(group_message: GroupMessage, buf: *mut u8) -> size_t {
-    // encodes the group message as a byte array
-    let j = serde_json::to_vec(&group_message);
-
-    if j.is_err() {
-        return 1;
-    };
-
-    let mut result = j.unwrap();
-
-    ptr::copy(result.as_mut_ptr(), buf, result.len());
-
-    0
-}
-
 pub unsafe fn decode_group_message(buf: *const u8, len: usize) -> Result<GroupMessage> {
     let mut dst = vec![0; len];
 
