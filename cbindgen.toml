@@ -1,2 +1,0 @@
-language = "C"
-sys_includes = ["self_olm/olm.h"]
