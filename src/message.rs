@@ -2,10 +2,10 @@
 
 extern crate libc;
 
-use std::collections::HashMap;
+use libc::size_t;
 use serde::{Deserialize, Serialize};
-use serde_json::{Result};
-use libc::{size_t};
+use serde_json::Result;
+use std::collections::HashMap;
 use std::ptr;
 
 // Message is the containing structure for a message to an individual recipient
@@ -40,20 +40,17 @@ pub struct GroupMessage {
 }
 
 // impl blocks are used to declare functions on struct, similar to receiver functions in go
-impl Message{
+impl Message {
     pub fn new(mtype: i64, ciphertext: String) -> Message {
-        Message{
-            mtype,
-            ciphertext,
-        }
+        Message { mtype, ciphertext }
     }
 }
 
 // impl blocks are used to declare functions on struct, similar to receiver functions in go
 
-impl GroupMessage{
+impl GroupMessage {
     pub fn new(ciphertext: String) -> GroupMessage {
-        GroupMessage{
+        GroupMessage {
             recipients: HashMap::new(),
             ciphertext,
         }
@@ -67,11 +64,11 @@ impl GroupMessage{
 
     // Result is a tuple that gets returned that wrap an value or an error. It's similar to returning (value, error) in go
     // you can call .is_err() to check if there is an error, or you can .unwrap() the result to get the value
-    pub unsafe fn encode_to_buffer(&self, buf: *mut u8, buf_len: usize) -> Result<size_t>{
+    pub unsafe fn encode_to_buffer(&self, buf: *mut u8, buf_len: usize) -> Result<size_t> {
         let j = serde_json::to_vec(self);
 
         if j.is_err() {
-            return Err(j.err().unwrap())
+            return Err(j.err().unwrap());
         };
 
         let mut result = j.unwrap();
@@ -88,8 +85,7 @@ impl GroupMessage{
         // to memory allocated in c. The compiler can't determine if the memory
         // its copying to is valid, so we use this unsafe block to tell the compiler
         // to relax some of its checks.
-            ptr::copy(result.as_mut_ptr(), buf, result.len());
-
+        ptr::copy(result.as_mut_ptr(), buf, result.len());
 
         // return an ok result containing the size of the data written to the buffer
         Ok(result.len())
@@ -100,7 +96,6 @@ impl GroupMessage{
     }
 }
 
-
 // size_t here is not a native rust type, its a c type we need for the interface
 // its basically an architecture independent c type for representing an integer that
 // will work for both 32 and 64 bit systems
@@ -109,23 +104,19 @@ pub unsafe fn encode_group_message(group_message: GroupMessage, buf: *mut u8) ->
     let j = serde_json::to_vec(&group_message);
 
     if j.is_err() {
-        return 1
+        return 1;
     };
 
     let mut result = j.unwrap();
 
-
-        ptr::copy(result.as_mut_ptr(), buf, result.len());
-
+    ptr::copy(result.as_mut_ptr(), buf, result.len());
 
     0
 }
 
 pub unsafe fn decode_group_message(buf: *const u8, len: usize) -> Result<GroupMessage> {
-    let mut dst = Vec::with_capacity(len);
+    let mut dst = vec![0; len];
 
-    // copy the encoded json buffer to a rust slice
-    dst.set_len(len);
     ptr::copy(buf, dst.as_mut_ptr(), len);
 
     // deserialize the vector to a group message struct
@@ -152,7 +143,10 @@ mod tests {
         let ct = "test".to_string();
         let mut gm = GroupMessage::new(ct);
 
-        gm.add_recipient(String::from("test-recipient"), Message::new(0, String::from("test-ciphertext-key")));
+        gm.add_recipient(
+            String::from("test-recipient"),
+            Message::new(0, String::from("test-ciphertext-key")),
+        );
 
         let recip = gm.recipients.get(&String::from("test-recipient"));
         if let Some(k) = &recip {

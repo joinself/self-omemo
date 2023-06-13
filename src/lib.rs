@@ -6,5 +6,7 @@
 #![allow(improper_ctypes)]
 
 // include all of the other modules in the library
+#[allow(clippy::missing_safety_doc)]
 pub mod message;
+#[allow(clippy::missing_safety_doc)]
 pub mod omemo;
