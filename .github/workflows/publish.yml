@@ -1,0 +1,21 @@
+name: _publish
+
+on: 
+  workflow_call:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup job
+        uses: joinself/github-actions-public/setup-job@main
+      - name: Publish
+        shell: bash
+        run: |
+          . ${GITHUB_WORKSPACE}/.ci/env
+          echo "publishing..."
+      - name: Failure notification
+        if: ${{ failure() }}
+        uses: joinself/github-actions-public/failure-notification@main
+        with:
+          slack-webhook: ${{ secrets.SLACK_WEBHOOK_CI_ALERTS }}

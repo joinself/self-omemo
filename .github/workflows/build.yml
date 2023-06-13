@@ -1,0 +1,22 @@
+name: _build
+
+on: 
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup job
+        uses: joinself/github-actions-public/setup-job@main
+      - name: Build
+        shell: bash
+        run: |
+          . ${GITHUB_WORKSPACE}/.ci/env
+          echo "building..."
+          docker ps
+      - name: Failure notification
+        if: ${{ github.ref == 'refs/heads/main' && failure() }}
+        uses: joinself/github-actions-public/failure-notification@main
+        with:
+          slack-webhook: ${{ secrets.SLACK_WEBHOOK_CI_ALERTS }}
