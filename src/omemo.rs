@@ -1,17 +1,15 @@
 // Copyright 2020 Self Group Ltd. All Rights Reserved.
 
-extern crate libc;
-extern crate base64;
-
-include!(concat!(env!("OUT_DIR"), "/olm.rs"));
-
 use std::ffi::{CStr};
 use std::os::raw::c_char;
 use std::ptr;
-use libc::c_ulonglong;
-use base64::{encode_config, decode_config};
-use crate::message::{Message, GroupMessage, decode_group_message};
 
+use base64::{encode_config, decode_config};
+use libc::{c_ulonglong, size_t};
+use olm_sys::*;
+use sodium_sys::*;
+
+use crate::message::{Message, GroupMessage, decode_group_message};
 // GroupSession holds all of the participants of a session,
 // as well as the identity of the current user
 // the id is used to determine which key to use
@@ -36,41 +34,38 @@ impl GroupSession {
             participants: Vec::new(),
         };
 
-        return Box::into_raw(Box::new(gs))
+        Box::into_raw(Box::new(gs))
     }
 
-    pub fn set_identity(&mut self, id: *const c_char) {
-        let identity: String;
+    pub unsafe fn set_identity(&mut self, id: *const c_char) {
 
-        unsafe {
-            let idstr = CStr::from_ptr(id);
-            identity = idstr.to_str().unwrap().to_string();
-        }
+        
+           let idstr = CStr::from_ptr(id);
+           let identity = idstr.to_str().unwrap().to_string();
+        
 
         self.id = Some(identity);
     }
 
     // add a participcant and their session to the group session
-    pub fn add_participant(&mut self, id: *const c_char, s: *mut OlmSession) -> size_t {
-        let pid: String;
+    pub unsafe fn add_participant(&mut self, id: *const c_char, s: *mut OlmSession) -> size_t {
 
-        unsafe {
+
             let idstr = CStr::from_ptr(id).to_str();
 
             if idstr.is_err() {
-                println!("error: {}", idstr.unwrap_err().to_string());
+                println!("error: {}", idstr.unwrap_err());
                 return 1;
             };
 
-            pid = idstr.unwrap().to_string();
-        }
+            let pid = idstr.unwrap().to_string();
 
         self.participants.push(Participant{
-            id: String::from(pid),
+            id: pid,
             session: s,
         });
 
-        return 0;
+        0
     }
 
     // returns the size of an encrypted message based on the plaintext size
@@ -80,7 +75,7 @@ impl GroupSession {
         // generate a fake encoded message
         unsafe {
             // include 16 byte validation tag
-            pt_sz = sodium_base64_encoded_len(pt_len+24, sodium_base64_VARIANT_ORIGINAL_NO_PADDING as i32) as usize;
+            pt_sz = sodium_base64_encoded_len((pt_len+24) as u64, sodium_base64_VARIANT_ORIGINAL_NO_PADDING as i32) as usize;
         }
 
         let pt = String::from_utf8(vec![b'X'; pt_sz]);
@@ -104,11 +99,11 @@ impl GroupSession {
                 enc_sz = olm_encrypt_message_length(
                     p.session,
                     32 + 24,
-                );
+                ) as size_t;
             }
 
             // create mock recipient key
-            let ky = String::from_utf8(vec![b'X'; enc_sz as usize]);
+            let ky = String::from_utf8(vec![b'X'; enc_sz]);
             if ky.is_err() {
                 println!("error: could not generate a placeholder key");
                 return 0;
@@ -129,37 +124,37 @@ impl GroupSession {
 
         let alen = res.unwrap().len();
 
-        return alen as size_t;
+        alen as size_t
     }
 
     // returns the size of the paintext message based on the ciphertext
-    pub fn decrypted_size(&mut self, ct: *const u8, ct_len: size_t) -> size_t {
+    pub unsafe fn decrypted_size(&mut self, ct: *const u8, ct_len: size_t) -> size_t {
         // decode the group message
-        let gm = decode_group_message(ct, ct_len as usize);
+        let gm = decode_group_message(ct, ct_len);
         if gm.is_err() {
             return 0;
         }
 
         // plaintext size is the messages ciphertext size minus the 16
         // bytes used by the cipher to authenticate the message
-        let pt_len = gm.unwrap().ciphertext.len() - (16 as usize);
+        let pt_len = gm.unwrap().ciphertext.len() - 16;
 
-        return pt_len as size_t
+        pt_len as size_t
     }
 
     // encrypt a message
-    pub fn encrypt(&mut self, pt: *const u8, pt_len: size_t, ct: *mut u8, ct_len: size_t) -> size_t {
+    pub unsafe fn encrypt(&mut self, pt: *const u8, pt_len: size_t, ct: *mut u8, ct_len: size_t) -> size_t {
         assert!(!pt.is_null(), "plaintext buffer must not be null");
         assert!(!ct.is_null(), "ciphertext buffer must not be null");
         //assert!(self.encrypted_size(pt_len) > ct_len, "ciphertext buffer is not big enough");
 
         // setup message ciphertext, key and nonce buffer
-        let mut ctb: Vec<u8> = vec![0; (pt_len + 16) as usize];
+        let mut ctb: Vec<u8> = vec![0; pt_len + 16];
         let mut ctbl = ctb.len() as c_ulonglong;
-        let mut kb: Vec<u8> = vec![0; 32 as usize];
-        let mut nb: Vec<u8> = vec![0; 24 as usize];
+        let mut kb: Vec<u8> = vec![0; 32];
+        let mut nb: Vec<u8> = vec![0; 24];
 
-        unsafe {
+
             if sodium_init() == -1 {
                 println!("error: sodium is not ready");
                 return 0;
@@ -167,7 +162,7 @@ impl GroupSession {
 
             // create group message key
             crypto_aead_xchacha20poly1305_ietf_keygen(kb.as_mut_ptr());
-            randombytes_buf(nb.as_mut_ptr() as *mut libc::c_void, 24 as size_t);
+            randombytes_buf(nb.as_mut_ptr() as *mut libc::c_void, 24);
 
             crypto_aead_xchacha20poly1305_ietf_encrypt(
                 ctb.as_mut_ptr(),
@@ -175,15 +170,14 @@ impl GroupSession {
                 pt,
                 pt_len as u64,
                 ptr::null(),
-                0 as u64,
+                0_u64,
                 ptr::null_mut(),
                 nb.as_mut_ptr(),
                 kb.as_mut_ptr(),
             );
 
             ctb.set_len(ctbl as usize);
-        }
-
+ 
         // encode the ciphertext to base64
         let enc_ct = encode_config(ctb, base64::STANDARD_NO_PAD);
 
@@ -204,16 +198,16 @@ impl GroupSession {
             // if the session has encrpyted prior messages, the message type will
             // be 1 (normal message)
             unsafe {
-                mtype = olm_encrypt_message_type(p.session);
-                rand_sz = olm_encrypt_random_length(p.session);
+                mtype = olm_encrypt_message_type(p.session) as size_t;
+                rand_sz = olm_encrypt_random_length(p.session) as size_t;
             }
 
-            let mut rand_buf: Vec<u8> = vec![0; rand_sz as usize];
+            let mut rand_buf: Vec<u8> = vec![0; rand_sz];
 
             // generate some random data if needed
             if rand_sz > 0 {
                 unsafe {
-                    randombytes_buf(rand_buf.as_mut_ptr() as *mut libc::c_void, rand_sz);
+                    randombytes_buf(rand_buf.as_mut_ptr() as *mut libc::c_void, rand_sz as u64);
                 }
             }
 
@@ -224,7 +218,7 @@ impl GroupSession {
                 ct_sz = olm_encrypt_message_length(
                     p.session,
                     32 + 24,
-                );
+                ) as size_t;
 
                 let last_err = session_error(p.session);
 
@@ -241,11 +235,11 @@ impl GroupSession {
                 olm_encrypt(
                     p.session,
                     grp_pt.as_mut_ptr() as *mut libc::c_void,
-                    grp_pt.len() as size_t,
+                    grp_pt.len() as u64,
                     rand_buf.as_mut_ptr() as *mut libc::c_void,
-                    rand_sz,
+                    rand_sz as u64,
                     ct_buf.as_mut_ptr() as *mut libc::c_void,
-                    ct_sz,
+                    ct_sz as u64,
                 );
 
                 let last_err = session_error(p.session);
@@ -268,15 +262,15 @@ impl GroupSession {
         }
 
         // copy encoded json to ciphertext buffer
-        let result = gm.encode_to_buffer(ct, ct_len as usize);
+        let result = gm.encode_to_buffer(ct, ct_len);
         if result.is_err() {
             return 0;
         }
 
-        return result.unwrap() as size_t;
+        result.unwrap() as size_t
     }
 
-    pub fn decrypt(&mut self, id: *const c_char, pt: *mut u8, pt_len: size_t, ct: *const u8, ct_len: size_t) -> size_t {
+    pub unsafe fn decrypt(&mut self, id: *const c_char, pt: *mut u8, pt_len: size_t, ct: *const u8, ct_len: size_t) -> size_t {
         let pid: String;
 
         unsafe {
@@ -339,10 +333,10 @@ impl GroupSession {
             // get the size of the decrypted keys plaintext
             ptk_sz = olm_decrypt_max_plaintext_length(
                 s,
-                header.mtype as size_t,
+                header.mtype as u64,
                 ctk_buf_cpy.as_mut_ptr() as *mut libc::c_void,
-                ctk_buf_cpy.len() as size_t,
-            );
+                ctk_buf_cpy.len() as u64,
+            ) as size_t;
         }
 
         let mut last_err = session_error(s);
@@ -352,17 +346,17 @@ impl GroupSession {
         }
 
         // allocate a buffer for the plaintext message key + nonce
-        let mut ptk_buf: Vec<u8> = vec![0; ptk_sz as usize];
+        let mut ptk_buf: Vec<u8> = vec![0; ptk_sz];
 
         // decrypt the message key + nonce
         unsafe {
             olm_decrypt(
                 s,
-                header.mtype as size_t,
+                header.mtype as u64,
                 ctk_buf.as_mut_ptr() as *mut libc::c_void,
-                ctk_buf.len() as size_t,
+                ctk_buf.len() as u64,
                 ptk_buf.as_mut_ptr() as *mut libc::c_void,
-                ptk_sz,
+                ptk_sz as u64,
             );
         }
 
@@ -395,7 +389,7 @@ impl GroupSession {
                 dec_ct.as_mut_ptr(),
                 dec_ct.len() as u64,
                 ptr::null_mut(),
-                0 as u64,
+                0_u64,
                 ptk_buf[32..56].as_ptr(),
                 ptk_buf[0..32].as_ptr(),
             );
@@ -406,7 +400,7 @@ impl GroupSession {
             }
         }
 
-        return ptl as size_t;
+        ptl as usize
     }
 }
 

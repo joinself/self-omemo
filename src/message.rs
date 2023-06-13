@@ -42,9 +42,9 @@ pub struct GroupMessage {
 // impl blocks are used to declare functions on struct, similar to receiver functions in go
 impl Message{
     pub fn new(mtype: i64, ciphertext: String) -> Message {
-        return Message{
-            mtype: mtype,
-            ciphertext: ciphertext,
+        Message{
+            mtype,
+            ciphertext,
         }
     }
 }
@@ -53,21 +53,21 @@ impl Message{
 
 impl GroupMessage{
     pub fn new(ciphertext: String) -> GroupMessage {
-        return GroupMessage{
+        GroupMessage{
             recipients: HashMap::new(),
-            ciphertext: ciphertext,
+            ciphertext,
         }
     }
 
     // self in this context is a pointer to the group message struct
     // its actually not a parameter you have to pass in when calling this function
     pub fn encode(&self) -> Result<Vec<u8>> {
-        return serde_json::to_vec(self);
+        serde_json::to_vec(self)
     }
 
     // Result is a tuple that gets returned that wrap an value or an error. It's similar to returning (value, error) in go
     // you can call .is_err() to check if there is an error, or you can .unwrap() the result to get the value
-    pub fn encode_to_buffer(&self, buf: *mut u8, buf_len: usize) -> Result<size_t>{
+    pub unsafe fn encode_to_buffer(&self, buf: *mut u8, buf_len: usize) -> Result<size_t>{
         let j = serde_json::to_vec(self);
 
         if j.is_err() {
@@ -88,12 +88,11 @@ impl GroupMessage{
         // to memory allocated in c. The compiler can't determine if the memory
         // its copying to is valid, so we use this unsafe block to tell the compiler
         // to relax some of its checks.
-        unsafe {
             ptr::copy(result.as_mut_ptr(), buf, result.len());
-        }
+
 
         // return an ok result containing the size of the data written to the buffer
-        return Ok(result.len());
+        Ok(result.len())
     }
 
     pub fn add_recipient(&mut self, recipient: String, msg: Message) {
@@ -105,7 +104,7 @@ impl GroupMessage{
 // size_t here is not a native rust type, its a c type we need for the interface
 // its basically an architecture independent c type for representing an integer that
 // will work for both 32 and 64 bit systems
-pub fn encode_group_message(group_message: GroupMessage, buf: *mut u8) -> size_t {
+pub unsafe fn encode_group_message(group_message: GroupMessage, buf: *mut u8) -> size_t {
     // encodes the group message as a byte array
     let j = serde_json::to_vec(&group_message);
 
@@ -115,26 +114,24 @@ pub fn encode_group_message(group_message: GroupMessage, buf: *mut u8) -> size_t
 
     let mut result = j.unwrap();
 
-    unsafe {
-        ptr::copy(result.as_mut_ptr(), buf, result.len());
-    }
 
-    return 0
+        ptr::copy(result.as_mut_ptr(), buf, result.len());
+
+
+    0
 }
 
-pub fn decode_group_message(buf: *const u8, len: usize) -> Result<GroupMessage> {
+pub unsafe fn decode_group_message(buf: *const u8, len: usize) -> Result<GroupMessage> {
     let mut dst = Vec::with_capacity(len);
 
     // copy the encoded json buffer to a rust slice
-    unsafe {
-        dst.set_len(len);
-        ptr::copy(buf, dst.as_mut_ptr(), len);
-    }
+    dst.set_len(len);
+    ptr::copy(buf, dst.as_mut_ptr(), len);
 
     // deserialize the vector to a group message struct
     let gm: GroupMessage = serde_json::from_slice(dst.as_slice())?;
 
-    return Ok(gm)
+    Ok(gm)
 }
 
 // unit tests are normally written in the same file as the implementation
@@ -147,7 +144,7 @@ mod tests {
         let ct = "test".to_string();
         let gm = GroupMessage::new(ct);
         let body = gm.encode();
-        assert_eq!(body.is_ok(), true);
+        assert!(body.is_ok());
     }
 
     #[test]
