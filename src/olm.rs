@@ -161,7 +161,7 @@ pub unsafe extern "C" fn self_olm_remove_one_time_keys(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn self_olm_account_identity_keys_lengths(account: *mut OlmAccount) -> u64 {
+pub unsafe extern "C" fn self_olm_account_identity_keys_length(account: *mut OlmAccount) -> u64 {
     olm_account_identity_keys_length((*account).ptr)
 }
 

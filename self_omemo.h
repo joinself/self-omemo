@@ -106,7 +106,7 @@ uint64_t self_olm_account_one_time_keys(struct OlmAccount *account,
 
 uint64_t self_olm_remove_one_time_keys(struct OlmAccount *account, struct OlmSession *session);
 
-uint64_t self_olm_account_identity_keys_lengths(struct OlmAccount *account);
+uint64_t self_olm_account_identity_keys_length(struct OlmAccount *account);
 
 uint64_t self_olm_account_identity_keys(struct OlmAccount *account,
                                         void *identity_keys,
