@@ -52,143 +52,143 @@ size_t self_omemo_decrypt(struct GroupSession *gs,
 
 struct OlmAccount *self_olm_account(void *memory);
 
-uint64_t self_olm_account_size(void);
+size_t self_olm_account_size(void);
 
-uint64_t self_olm_create_account_random_length(struct OlmAccount *account);
+size_t self_olm_create_account_random_length(struct OlmAccount *account);
 
-uint64_t self_olm_create_account(struct OlmAccount *account, void *random, uint64_t random_length);
+size_t self_olm_create_account(struct OlmAccount *account, void *random, size_t random_length);
 
-uint64_t self_olm_import_account(struct OlmAccount *account,
-                                 void *ed25519_secret_key,
-                                 void *ed25519_public_key,
-                                 void *curve25519_secret_key,
-                                 void *curve25519_public_key);
+size_t self_olm_import_account(struct OlmAccount *account,
+                               void *ed25519_secret_key,
+                               void *ed25519_public_key,
+                               void *curve25519_secret_key,
+                               void *curve25519_public_key);
 
-uint64_t self_olm_unpickle_account(struct OlmAccount *account,
-                                   const void *key,
-                                   uint64_t key_length,
-                                   void *pickled,
-                                   uint64_t pickled_length);
-
-uint64_t self_olm_pickle_account(struct OlmAccount *account,
+size_t self_olm_unpickle_account(struct OlmAccount *account,
                                  const void *key,
-                                 uint64_t key_length,
+                                 size_t key_length,
                                  void *pickled,
-                                 uint64_t pickled_length);
+                                 size_t pickled_length);
 
-uint64_t self_olm_pickle_account_length(const struct OlmAccount *account);
+size_t self_olm_pickle_account(struct OlmAccount *account,
+                               const void *key,
+                               size_t key_length,
+                               void *pickled,
+                               size_t pickled_length);
 
-uint64_t self_olm_account_signature_length(const struct OlmAccount *account);
+size_t self_olm_pickle_account_length(const struct OlmAccount *account);
 
-uint64_t self_olm_account_sign(struct OlmAccount *account,
-                               const void *message,
-                               uint64_t message_length,
-                               void *signature,
-                               uint64_t signature_length);
+size_t self_olm_account_signature_length(const struct OlmAccount *account);
 
-uint64_t self_olm_account_max_number_of_one_time_keys(struct OlmAccount *account);
+size_t self_olm_account_sign(struct OlmAccount *account,
+                             const void *message,
+                             size_t message_length,
+                             void *signature,
+                             size_t signature_length);
 
-uint64_t self_olm_account_mark_keys_as_published(struct OlmAccount *account);
+size_t self_olm_account_max_number_of_one_time_keys(struct OlmAccount *account);
 
-uint64_t self_olm_account_generate_one_time_keys_random_length(struct OlmAccount *account,
-                                                               uint64_t number_of_keys);
+size_t self_olm_account_mark_keys_as_published(struct OlmAccount *account);
 
-uint64_t self_olm_account_generate_one_time_keys(struct OlmAccount *account,
-                                                 uint64_t number_of_keys,
-                                                 void *random,
-                                                 uint64_t random_length);
+size_t self_olm_account_generate_one_time_keys_random_length(struct OlmAccount *account,
+                                                             size_t number_of_keys);
 
-uint64_t self_olm_account_one_time_keys_length(const struct OlmAccount *account);
+size_t self_olm_account_generate_one_time_keys(struct OlmAccount *account,
+                                               size_t number_of_keys,
+                                               void *random,
+                                               size_t random_length);
 
-uint64_t self_olm_account_one_time_keys(struct OlmAccount *account,
-                                        void *one_time_keys,
-                                        uint64_t one_time_keys_length);
+size_t self_olm_account_one_time_keys_length(const struct OlmAccount *account);
 
-uint64_t self_olm_remove_one_time_keys(struct OlmAccount *account, struct OlmSession *session);
+size_t self_olm_account_one_time_keys(struct OlmAccount *account,
+                                      void *one_time_keys,
+                                      size_t one_time_keys_length);
 
-uint64_t self_olm_account_identity_keys_length(struct OlmAccount *account);
+size_t self_olm_remove_one_time_keys(struct OlmAccount *account, struct OlmSession *session);
 
-uint64_t self_olm_account_identity_keys(struct OlmAccount *account,
-                                        void *identity_keys,
-                                        uint64_t identity_key_length);
+size_t self_olm_account_identity_keys_length(struct OlmAccount *account);
 
-const int8_t *self_olm_account_last_error(const struct OlmAccount *account);
+size_t self_olm_account_identity_keys(struct OlmAccount *account,
+                                      void *identity_keys,
+                                      size_t identity_key_length);
+
+const char *self_olm_account_last_error(const struct OlmAccount *account);
 
 void self_olm_account_destroy(struct OlmAccount *account);
 
 struct OlmSession *self_olm_session(void *memory);
 
-uint64_t self_olm_session_size(void);
+size_t self_olm_session_size(void);
 
-uint64_t self_olm_create_outbound_session_random_length(const struct OlmSession *session);
+size_t self_olm_create_outbound_session_random_length(const struct OlmSession *session);
 
-uint64_t self_olm_create_outbound_session(struct OlmSession *session,
-                                          const struct OlmAccount *account,
-                                          const void *their_identity_key,
-                                          uint64_t their_identity_key_length,
-                                          const void *their_one_time_key,
-                                          uint64_t their_one_time_key_length,
-                                          void *random,
-                                          uint64_t random_length);
+size_t self_olm_create_outbound_session(struct OlmSession *session,
+                                        const struct OlmAccount *account,
+                                        const void *their_identity_key,
+                                        size_t their_identity_key_length,
+                                        const void *their_one_time_key,
+                                        size_t their_one_time_key_length,
+                                        void *random,
+                                        size_t random_length);
 
-uint64_t self_olm_create_inbound_session(struct OlmSession *session,
-                                         struct OlmAccount *account,
-                                         void *one_time_key_message,
-                                         uint64_t message_length);
+size_t self_olm_create_inbound_session(struct OlmSession *session,
+                                       struct OlmAccount *account,
+                                       void *one_time_key_message,
+                                       size_t message_length);
 
-uint64_t self_olm_create_inbound_session_from(struct OlmSession *session,
-                                              struct OlmAccount *account,
-                                              const void *their_identity_key,
-                                              uint64_t their_identity_key_length,
-                                              void *one_time_key_message,
-                                              uint64_t message_length);
+size_t self_olm_create_inbound_session_from(struct OlmSession *session,
+                                            struct OlmAccount *account,
+                                            const void *their_identity_key,
+                                            size_t their_identity_key_length,
+                                            void *one_time_key_message,
+                                            size_t message_length);
 
-uint64_t self_olm_unpickle_session(struct OlmSession *session,
-                                   const void *key,
-                                   uint64_t key_length,
-                                   void *pickled,
-                                   uint64_t pickled_length);
-
-uint64_t self_olm_pickle_session(struct OlmSession *session,
+size_t self_olm_unpickle_session(struct OlmSession *session,
                                  const void *key,
-                                 uint64_t key_length,
+                                 size_t key_length,
                                  void *pickled,
-                                 uint64_t pickled_length);
+                                 size_t pickled_length);
 
-uint64_t self_olm_pickle_session_length(const struct OlmSession *session);
+size_t self_olm_pickle_session(struct OlmSession *session,
+                               const void *key,
+                               size_t key_length,
+                               void *pickled,
+                               size_t pickled_length);
 
-uint64_t self_olm_encrypt_message_type(const struct OlmSession *session);
+size_t self_olm_pickle_session_length(const struct OlmSession *session);
 
-uint64_t self_olm_matches_inbound_session(struct OlmSession *session,
-                                          void *one_time_key_message,
-                                          uint64_t message_length);
+size_t self_olm_encrypt_message_type(const struct OlmSession *session);
 
-uint64_t self_olm_matches_inbound_session_from(struct OlmSession *session,
-                                               const void *their_identity_key,
-                                               uint64_t their_identity_key_length,
-                                               void *one_time_key_message,
-                                               uint64_t message_length);
+size_t self_olm_matches_inbound_session(struct OlmSession *session,
+                                        void *one_time_key_message,
+                                        size_t message_length);
 
-const int8_t *self_olm_session_last_error(struct OlmSession *session);
+size_t self_olm_matches_inbound_session_from(struct OlmSession *session,
+                                             const void *their_identity_key,
+                                             size_t their_identity_key_length,
+                                             void *one_time_key_message,
+                                             size_t message_length);
+
+const char *self_olm_session_last_error(struct OlmSession *session);
 
 void self_olm_session_destroy(struct OlmSession *session);
 
 int32_t self_base642bin(uint8_t *bin,
-                        uint64_t bin_maxlen,
-                        const int8_t *b64,
-                        uint64_t b64_len,
-                        const int8_t *ignore,
-                        uint64_t *bin_len,
-                        const int8_t **b64_end,
+                        size_t bin_maxlen,
+                        const char *b64,
+                        size_t b64_len,
+                        const char *ignore,
+                        size_t *bin_len,
+                        const char **b64_end,
                         int32_t variant);
 
-int8_t *self_bin2base64(int8_t *b64,
-                        uint64_t b64_maxlen,
-                        const uint8_t *bin,
-                        uint64_t bin_len,
-                        int32_t variant);
+char *self_bin2base64(char *b64,
+                      size_t b64_maxlen,
+                      const uint8_t *bin,
+                      size_t bin_len,
+                      int32_t variant);
 
-uint64_t self_base64_ENCODED_LEN(uint64_t bin_len, int32_t variant);
+size_t self_base64_ENCODED_LEN(size_t bin_len, int32_t variant);
 
 void self_crypto_aead_xchacha20poly1305_ietf_keygen(uint8_t *k);
 
@@ -218,6 +218,10 @@ int32_t self_crypto_sign_ed25519_pk_to_curve25519(uint8_t *curve25519_pk,
 int32_t self_crypto_sign_ed25519_sk_to_curve25519(uint8_t *curve25519_sk,
                                                   const uint8_t *ed25519_sk);
 
-uint64_t self_crypto_sign_publickeybytes(void);
+size_t self_crypto_sign_publickeybytes(void);
 
-void self_randombytes_buf(void *buf, uint64_t size);
+size_t self_self_crypto_sign_secretkeybytes(void);
+
+int32_t self_crypto_sign_seed_keypair(uint8_t *pk, uint8_t *sk, const uint8_t *seed);
+
+void self_randombytes_buf(void *buf, size_t size);

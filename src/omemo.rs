@@ -76,9 +76,9 @@ impl GroupSession {
         unsafe {
             // include 16 byte validation tag
             pt_sz = sodium_base64_encoded_len(
-                (pt_len + 24) as u64,
+                pt_len + 24,
                 sodium_base64_VARIANT_ORIGINAL_NO_PADDING as i32,
-            ) as usize;
+            );
         }
 
         let pt = String::from_utf8(vec![b'X'; pt_sz]);
@@ -212,7 +212,7 @@ impl GroupSession {
             // generate some random data if needed
             if rand_sz > 0 {
                 unsafe {
-                    randombytes_buf(rand_buf.as_mut_ptr() as *mut libc::c_void, rand_sz as u64);
+                    randombytes_buf(rand_buf.as_mut_ptr() as *mut libc::c_void, rand_sz);
                 }
             }
 
@@ -237,11 +237,11 @@ impl GroupSession {
                 olm_encrypt(
                     p.session,
                     grp_pt.as_mut_ptr() as *mut libc::c_void,
-                    grp_pt.len() as u64,
+                    grp_pt.len(),
                     rand_buf.as_mut_ptr() as *mut libc::c_void,
-                    rand_sz as u64,
+                    rand_sz,
                     ct_buf.as_mut_ptr() as *mut libc::c_void,
-                    ct_sz as u64,
+                    ct_sz,
                 );
 
                 let last_err = session_error(p.session);
@@ -342,9 +342,9 @@ impl GroupSession {
             // get the size of the decrypted keys plaintext
             ptk_sz = olm_decrypt_max_plaintext_length(
                 s,
-                header.mtype as u64,
+                header.mtype as usize,
                 ctk_buf_cpy.as_mut_ptr() as *mut libc::c_void,
-                ctk_buf_cpy.len() as u64,
+                ctk_buf_cpy.len(),
             ) as size_t;
         }
 
@@ -361,11 +361,11 @@ impl GroupSession {
         unsafe {
             olm_decrypt(
                 s,
-                header.mtype as u64,
+                header.mtype as usize,
                 ctk_buf.as_mut_ptr() as *mut libc::c_void,
-                ctk_buf.len() as u64,
+                ctk_buf.len(),
                 ptk_buf.as_mut_ptr() as *mut libc::c_void,
-                ptk_sz as u64,
+                ptk_sz,
             );
         }
 
