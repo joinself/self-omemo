@@ -20,3 +20,8 @@ sodium_sys = { git = "https://github.com/joinself/sodium-sys" }
 
 [build-dependencies]
 cbindgen = "0.20.0"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
