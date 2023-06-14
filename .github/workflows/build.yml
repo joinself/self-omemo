@@ -6,6 +6,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: joinself/rust-build
     steps:
       - name: Setup job
         uses: joinself/github-actions-public/setup-job@main
@@ -13,8 +15,28 @@ jobs:
         shell: bash
         run: |
           . ${GITHUB_WORKSPACE}/.ci/env
-          echo "building..."
-          docker ps
+          archs=("aarch64-linux-android" "x86_64-linux-android")
+          tripples=("aarch64-linux-android" "x86_64-linux-android")
+          sysroots=("aarch64-linux-android" "x86_64-linux-android")
+          rustflags=("-C target-feature=+neon" "-C target-feature=+neon" "" "")
+          for i in ${!archs[@]}; do
+            export C_INCLUDE_PATH=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/:/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/${sysroots[$i]}/
+            export CPLUS_INCLUDE_PATH=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/:/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/${sysroots[$i]}/
+            export CC=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/${archs[$i]}24-clang
+            export CXX=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/${archs[$i]}24-clang++
+            export AR=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
+            export RUSTFLAGS=${rustflags[$i]}
+            cargo build --release --target ${tripples[$i]}
+            mkdir -p self-omemo-android-${archs[$i]}/include/
+            cp self_omemo.h self-omemo-android-${archs[$i]}/include/
+            tar -czvf self-omemo-android-${archs[$i]}.tar.gz self-omemo-android-${archs[$i]}
+          done
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: *.tar.gz
+          retention-days: 1
       - name: Failure notification
         if: ${{ github.ref == 'refs/heads/main' && failure() }}
         uses: joinself/github-actions-public/failure-notification@main
