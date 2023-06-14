@@ -29,13 +29,14 @@ jobs:
             cargo build --release --target ${tripples[$i]}
             mkdir -p self-omemo-android-${archs[$i]}/include/
             cp self_omemo.h self-omemo-android-${archs[$i]}/include/
-            tar -czvf self-omemo-android-${archs[$i]}.tar.gz self-omemo-android-${archs[$i]}
           done
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: artifacts
-          path: **/*.tar.gz
+          path: |
+            self-omemo-android-aarch64-linux-android
+            self-omemo-android-x86_64-linux-android
           retention-days: 1
       - name: Failure notification
         if: ${{ github.ref == 'refs/heads/main' && failure() }}
