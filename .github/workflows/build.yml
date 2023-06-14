@@ -35,7 +35,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: artifacts
-          path: *.tar.gz
+          path: **/*.tar.gz
           retention-days: 1
       - name: Failure notification
         if: ${{ github.ref == 'refs/heads/main' && failure() }}
