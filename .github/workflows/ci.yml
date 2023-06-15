@@ -28,3 +28,4 @@ jobs:
     needs: [license-compliance, secret-scan, build]
     uses: ./.github/workflows/publish.yml
     secrets: inherit
+
