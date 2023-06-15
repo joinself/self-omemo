@@ -1,16 +1,13 @@
 use libc::{c_char, c_void, size_t};
 use sodium_sys::*;
 
-pub const self_base64_VARIANT_URLSAFE: u32 = sodium_base64_VARIANT_URLSAFE;
-pub const self_base64_VARIANT_URLSAFE_NO_PADDING: u32 = sodium_base64_VARIANT_URLSAFE_NO_PADDING;
-pub const self_base64_VARIANT_ORIGINAL: u32 = sodium_base64_VARIANT_ORIGINAL;
-pub const self_base64_VARIANT_ORIGINAL_NO_PADDING: u32 = sodium_base64_VARIANT_ORIGINAL_NO_PADDING;
-pub const self_crypto_aead_xchacha20poly1305_ietf_ABYTES: u32 =
-    crypto_aead_xchacha20poly1305_ietf_ABYTES;
-pub const self_crypto_aead_xchacha20poly1305_ietf_NPUBBYTES: u32 =
-    crypto_aead_xchacha20poly1305_ietf_NPUBBYTES;
-pub const self_crypto_aead_xchacha20poly1305_ietf_KEYBYTES: u32 =
-    crypto_aead_xchacha20poly1305_ietf_KEYBYTES;
+pub const self_base64_VARIANT_URLSAFE: u32 = 5; //sodium_base64_VARIANT_URLSAFE
+pub const self_base64_VARIANT_URLSAFE_NO_PADDING: u32 = 7; // sodium_base64_VARIANT_URLSAFE_NO_PADDING
+pub const self_base64_VARIANT_ORIGINAL: u32 = 1; // sodium_base64_VARIANT_ORIGINAL
+pub const self_base64_VARIANT_ORIGINAL_NO_PADDING: u32 = 3; // sodium_base64_VARIANT_ORIGINAL_NO_PADDING
+pub const self_crypto_aead_xchacha20poly1305_ietf_ABYTES: u32 = 16; // crypto_aead_xchacha20poly1305_ietf_ABYTES
+pub const self_crypto_aead_xchacha20poly1305_ietf_NPUBBYTES: u32 = 24; // crypto_aead_xchacha20poly1305_ietf_NPUBBYTES
+pub const self_crypto_aead_xchacha20poly1305_ietf_KEYBYTES: u32 = 32; // crypto_aead_xchacha20poly1305_ietf_KEYBYTES
 
 // wrap sodium functions
 #[no_mangle]

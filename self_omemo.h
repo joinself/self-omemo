@@ -3,19 +3,19 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define self_base64_VARIANT_URLSAFE sodium_base64_VARIANT_URLSAFE
+#define self_base64_VARIANT_URLSAFE 5
 
-#define self_base64_VARIANT_URLSAFE_NO_PADDING sodium_base64_VARIANT_URLSAFE_NO_PADDING
+#define self_base64_VARIANT_URLSAFE_NO_PADDING 7
 
-#define self_base64_VARIANT_ORIGINAL sodium_base64_VARIANT_ORIGINAL
+#define self_base64_VARIANT_ORIGINAL 1
 
-#define self_base64_VARIANT_ORIGINAL_NO_PADDING sodium_base64_VARIANT_ORIGINAL_NO_PADDING
+#define self_base64_VARIANT_ORIGINAL_NO_PADDING 3
 
-#define self_crypto_aead_xchacha20poly1305_ietf_ABYTES crypto_aead_xchacha20poly1305_ietf_ABYTES
+#define self_crypto_aead_xchacha20poly1305_ietf_ABYTES 16
 
-#define self_crypto_aead_xchacha20poly1305_ietf_NPUBBYTES crypto_aead_xchacha20poly1305_ietf_NPUBBYTES
+#define self_crypto_aead_xchacha20poly1305_ietf_NPUBBYTES 24
 
-#define self_crypto_aead_xchacha20poly1305_ietf_KEYBYTES crypto_aead_xchacha20poly1305_ietf_KEYBYTES
+#define self_crypto_aead_xchacha20poly1305_ietf_KEYBYTES 32
 
 typedef struct GroupSession GroupSession;
 
