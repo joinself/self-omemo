@@ -102,7 +102,7 @@ pub unsafe extern "C" fn self_crypto_sign_publickeybytes() -> size_t {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn self_self_crypto_sign_secretkeybytes() -> size_t {
+pub unsafe extern "C" fn self_crypto_sign_secretkeybytes() -> size_t {
     crypto_sign_secretkeybytes()
 }
 

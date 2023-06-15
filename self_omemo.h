@@ -220,7 +220,7 @@ int32_t self_crypto_sign_ed25519_sk_to_curve25519(uint8_t *curve25519_sk,
 
 size_t self_crypto_sign_publickeybytes(void);
 
-size_t self_self_crypto_sign_secretkeybytes(void);
+size_t self_crypto_sign_secretkeybytes(void);
 
 int32_t self_crypto_sign_seed_keypair(uint8_t *pk, uint8_t *sk, const uint8_t *seed);
 
