@@ -46,9 +46,9 @@ jobs:
             cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
           done
           aarch64-linux-gnu-strip -x self-omemo-aarch64-linux-android/libself_omemo.a
+          arm-linux-gnueabi-strip -x self-omemo-armv7-linux-androideabi/libself_omemo.a
           strip -x self-omemo-x86_64-linux-android/libself_omemo.a
           strip -x self-omemo-i686-linux-android/libself_omemo.a
-
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
