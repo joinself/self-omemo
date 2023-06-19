@@ -25,10 +25,9 @@ jobs:
             cargo build --release --target ${tripples[$i]}
             mkdir -p self-omemo-${tripples[$i]}
             cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
-            md5sum self-omemo-${tripples[$i]}/libself_omemo.a
-            strip -x self-omemo-${tripples[$i]}/libself_omemo.a
-            md5sum self-omemo-${tripples[$i]}/libself_omemo.a
           done
+          aarch64-linux-gnu-strip -x self-omemo-aarch64-unknown-linux-gnu/libself_omemo.a
+          strip -x self-omemo-x86_64-unknown-linux-gnu/libself_omemo.a
 
           # android
           archs=("aarch64-linux-android" "armv7a-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
@@ -45,10 +44,11 @@ jobs:
             cargo build --release --target ${tripples[$i]}
             mkdir -p self-omemo-${tripples[$i]}
             cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
-            md5sum self-omemo-${tripples[$i]}/libself_omemo.a
-            strip -x self-omemo-${tripples[$i]}/libself_omemo.a
-            md5sum self-omemo-${tripples[$i]}/libself_omemo.a
           done
+          aarch64-linux-gnu-strip -x self-omemo-aarch64-linux-android/libself_omemo.a
+          strip -x self-omemo-x86_64-linux-android/libself_omemo.a
+          strip -x self-omemo-i686-linux-android/libself_omemo.a
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
