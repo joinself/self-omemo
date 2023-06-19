@@ -25,8 +25,8 @@ jobs:
             cargo build --release --target ${tripples[$i]}
             mkdir -p self-omemo-${tripples[$i]}
             cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
+            strip -x self-omemo-${tripples[$i]}/libself_omemo.a
           done
-
 
           # android
           archs=("aarch64-linux-android" "armv7a-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
@@ -44,6 +44,7 @@ jobs:
             mkdir -p self-omemo-${tripples[$i]}
             #mkdir -p self-omemo-android-${archs[$i]}/include/
             cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
+            strip -x self-omemo-${tripples[$i]}/libself_omemo.a
             #cp self_omemo.h self-omemo-android-${archs[$i]}/include/
           done
           apt-get update
