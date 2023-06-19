@@ -1,0 +1,68 @@
+name: _build
+
+on: 
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: joinself/rust-build
+    steps:
+      - name: Setup job
+        uses: joinself/github-actions-public/setup-job@main
+      - name: Build
+        shell: bash
+        run: |
+          . ${GITHUB_WORKSPACE}/.ci/env
+          export HOME=/root
+
+          # linux
+          tripples=("aarch64-unknown-linux-gnu" "x86_64-unknown-linux-gnu")
+          rustflags=("-C target-feature=+neon" "")
+          for i in ${!tripples[@]}; do
+            export RUSTFLAGS=${rustflags[$i]}
+            cargo build --release --target ${tripples[$i]}
+            mkdir -p self-omemo-${tripples[$i]}
+            cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
+          done
+          aarch64-linux-gnu-strip -x self-omemo-aarch64-unknown-linux-gnu/libself_omemo.a
+          strip -x self-omemo-x86_64-unknown-linux-gnu/libself_omemo.a
+
+          # android
+          archs=("aarch64-linux-android" "armv7a-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
+          tripples=("aarch64-linux-android" "armv7-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
+          sysroots=("aarch64-linux-android" "arm-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
+          rustflags=("-C target-feature=+neon" "-C target-feature=+neon" "" "")
+          for i in ${!archs[@]}; do
+            export C_INCLUDE_PATH=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/:/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/${sysroots[$i]}/
+            export CPLUS_INCLUDE_PATH=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/:/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/${sysroots[$i]}/
+            export CC=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/${archs[$i]}24-clang
+            export CXX=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/${archs[$i]}24-clang++
+            export AR=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
+            export RUSTFLAGS=${rustflags[$i]}
+            cargo build --release --target ${tripples[$i]}
+            mkdir -p self-omemo-${tripples[$i]}
+            cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
+          done
+          aarch64-linux-gnu-strip -x self-omemo-aarch64-linux-android/libself_omemo.a
+          arm-linux-gnueabi-strip -x self-omemo-armv7-linux-androideabi/libself_omemo.a
+          strip -x self-omemo-x86_64-linux-android/libself_omemo.a
+          strip -x self-omemo-i686-linux-android/libself_omemo.a
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            self-omemo-aarch64-unknown-linux-gnu
+            self-omemo-x86_64-unknown-linux-gnu
+            self-omemo-aarch64-linux-android
+            self-omemo-armv7-linux-androideabi
+            self-omemo-i686-linux-android
+            self-omemo-x86_64-linux-android
+          retention-days: 1
+      - name: Failure notification
+        if: ${{ github.ref == 'refs/heads/main' && failure() }}
+        uses: joinself/github-actions-public/failure-notification@main
+        with:
+          slack-webhook: ${{ secrets.SLACK_WEBHOOK_CI_ALERTS }}

@@ -1,0 +1,74 @@
+name: _publish
+
+on: 
+  workflow_call:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    container:
+      image: joinself/tools
+    steps:
+      - name: Setup job
+        uses: joinself/github-actions-public/setup-job@main
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: artifacts
+      - name: Publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_CI_CI: ${{ secrets.SLACK_WEBHOOK_CI_CI }}
+        run: |
+          . ${GITHUB_WORKSPACE}/.ci/env
+          chown root:root .
+          git config --global user.name ci
+          git config --global user.email ops@joinself.com
+
+          branch=$(git branch --show-current)
+          tags=$(git tag --merged ${branch} | sort -V)
+          commit_message=$(git show -s --format=%s)
+          if [[ "${tags}" == "" ]]; then
+            version="0.1.0"
+          else
+            current_version=$(echo "${tags}" | tail -n 1)
+            case $commit_message in
+              *\[bump-major\]*)
+                version=$(semver bump major $current_version)
+                ;;
+              *\[bump-patch\]*)
+                version=$(semver bump patch $current_version)
+                ;;
+              *)
+                version=$(semver bump minor $current_version)
+                ;;
+            esac
+          fi
+
+          git tag -a ${version} -m "${version}"
+          git push origin ${version}
+
+          subject=$(git log -n 1 --format=%s)
+          body=$(git log -n 1 --format=%b | grep -E '^\*|^-' | sed 's/^*/-/g') || true
+          if [[ -z ${body} ]]; then
+            release_notes="- ${subject}"
+          else
+            release_notes="${body}"
+          fi
+
+          tar -czvf self-omemo-aarch64-unknown-linux-gnu.tar.gz self-omemo-aarch64-unknown-linux-gnu
+          tar -czvf self-omemo-x86_64-unknown-linux-gnu.tar.gz self-omemo-x86_64-unknown-linux-gnu
+          tar -czvf self-omemo-aarch64-linux-android.tar.gz self-omemo-aarch64-linux-android
+          tar -czvf self-omemo-armv7-linux-androideabi.tar.gz self-omemo-armv7-linux-androideabi
+          tar -czvf self-omemo-i686-linux-android.tar.gz self-omemo-i686-linux-android
+          tar -czvf self-omemo-x86_64-linux-android.tar.gz self-omemo-x86_64-linux-android
+
+          gh release create "${version}" --notes "${release_notes}" self-omemo-aarch64-unknown-linux-gnu.tar.gz self-omemo-x86_64-unknown-linux-gnu.tar.gz self-omemo-aarch64-linux-android.tar.gz self-omemo-armv7-linux-androideabi.tar.gz self-omemo-i686-linux-android.tar.gz self-omemo-x86_64-linux-android.tar.gz
+
+          slack-release-notification -v ${version}
+      - name: Failure notification
+        if: ${{ failure() }}
+        uses: joinself/github-actions-public/failure-notification@main
+        with:
+          slack-webhook: ${{ secrets.SLACK_WEBHOOK_CI_ALERTS }}

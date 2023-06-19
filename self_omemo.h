@@ -3,19 +3,19 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define self_base64_VARIANT_URLSAFE sodium_base64_VARIANT_URLSAFE
+#define self_base64_VARIANT_URLSAFE 5
 
-#define self_base64_VARIANT_URLSAFE_NO_PADDING sodium_base64_VARIANT_URLSAFE_NO_PADDING
+#define self_base64_VARIANT_URLSAFE_NO_PADDING 7
 
-#define self_base64_VARIANT_ORIGINAL sodium_base64_VARIANT_ORIGINAL
+#define self_base64_VARIANT_ORIGINAL 1
 
-#define self_base64_VARIANT_ORIGINAL_NO_PADDING sodium_base64_VARIANT_ORIGINAL_NO_PADDING
+#define self_base64_VARIANT_ORIGINAL_NO_PADDING 3
 
-#define self_crypto_aead_xchacha20poly1305_ietf_ABYTES crypto_aead_xchacha20poly1305_ietf_ABYTES
+#define self_crypto_aead_xchacha20poly1305_ietf_ABYTES 16
 
-#define self_crypto_aead_xchacha20poly1305_ietf_NPUBBYTES crypto_aead_xchacha20poly1305_ietf_NPUBBYTES
+#define self_crypto_aead_xchacha20poly1305_ietf_NPUBBYTES 24
 
-#define self_crypto_aead_xchacha20poly1305_ietf_KEYBYTES crypto_aead_xchacha20poly1305_ietf_KEYBYTES
+#define self_crypto_aead_xchacha20poly1305_ietf_KEYBYTES 32
 
 typedef struct GroupSession GroupSession;
 
@@ -220,7 +220,7 @@ int32_t self_crypto_sign_ed25519_sk_to_curve25519(uint8_t *curve25519_sk,
 
 size_t self_crypto_sign_publickeybytes(void);
 
-size_t self_self_crypto_sign_secretkeybytes(void);
+size_t self_crypto_sign_secretkeybytes(void);
 
 int32_t self_crypto_sign_seed_keypair(uint8_t *pk, uint8_t *sk, const uint8_t *seed);
 
