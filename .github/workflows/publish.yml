@@ -22,13 +22,6 @@ jobs:
           SLACK_WEBHOOK_CI_CI: ${{ secrets.SLACK_WEBHOOK_CI_CI }}
         run: |
           . ${GITHUB_WORKSPACE}/.ci/env
-
-          echo "publishing..."
-          apt-get update
-          apt-get install -y tree
-          ls -lah
-          tree
-
           chown root:root .
           git config --global user.name ci
           git config --global user.email ops@joinself.com
@@ -74,7 +67,6 @@ jobs:
           gh release create "${version}" --notes "${release_notes}" self-omemo-aarch64-unknown-linux-gnu.tar.gz self-omemo-x86_64-unknown-linux-gnu.tar.gz self-omemo-aarch64-linux-android.tar.gz self-omemo-armv7-linux-androideabi.tar.gz self-omemo-i686-linux-android.tar.gz self-omemo-x86_64-linux-android.tar.gz
 
           #slack-release-notification -v ${version}
-
       - name: Failure notification
         if: ${{ failure() }}
         uses: joinself/github-actions-public/failure-notification@main

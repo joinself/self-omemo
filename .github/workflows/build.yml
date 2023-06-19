@@ -25,7 +25,9 @@ jobs:
             cargo build --release --target ${tripples[$i]}
             mkdir -p self-omemo-${tripples[$i]}
             cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
+            md5sum self-omemo-${tripples[$i]}/libself_omemo.a
             strip -x self-omemo-${tripples[$i]}/libself_omemo.a
+            md5sum self-omemo-${tripples[$i]}/libself_omemo.a
           done
 
           # android
@@ -42,15 +44,11 @@ jobs:
             export RUSTFLAGS=${rustflags[$i]}
             cargo build --release --target ${tripples[$i]}
             mkdir -p self-omemo-${tripples[$i]}
-            #mkdir -p self-omemo-android-${archs[$i]}/include/
             cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
+            md5sum self-omemo-${tripples[$i]}/libself_omemo.a
             strip -x self-omemo-${tripples[$i]}/libself_omemo.a
-            #cp self_omemo.h self-omemo-android-${archs[$i]}/include/
+            md5sum self-omemo-${tripples[$i]}/libself_omemo.a
           done
-          apt-get update
-          apt-get install -y tree
-          ls -lah
-          tree
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
