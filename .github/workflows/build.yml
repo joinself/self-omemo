@@ -27,6 +27,7 @@ jobs:
             cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
           done
 
+
           # android
           archs=("aarch64-linux-android" "armv7a-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
           tripples=("aarch64-linux-android" "armv7-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
