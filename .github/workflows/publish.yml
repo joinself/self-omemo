@@ -69,7 +69,7 @@ jobs:
           tar -czvf self-omemo-i686-linux-android.tar.gz self-omemo-i686-linux-android
           tar -czvf self-omemo-x86_64-linux-android.tar.gz self-omemo-x86_64-linux-android
 
-          gh release create "${version}" --notes "${release_notes}" self-omemo-aarch64-linux-android.tar.gz self-omemo-armv7-linux-android.tar.gz self-omemo-i686-linux-android.tar.gz self-omemo-x86_64-linux-android.tar.gz
+          gh release create "${version}" --notes "${release_notes}" self-omemo-aarch64-linux-android.tar.gz self-omemo-armv7-linux-androideabi.tar.gz self-omemo-i686-linux-android.tar.gz self-omemo-x86_64-linux-android.tar.gz
 
           #slack-release-notification -v ${version}
 
