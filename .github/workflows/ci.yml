@@ -24,7 +24,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     secrets: inherit
   publish:
-    #if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     needs: [license-compliance, secret-scan, build]
     uses: ./.github/workflows/publish.yml
     secrets: inherit
