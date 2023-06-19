@@ -16,9 +16,9 @@ jobs:
         run: |
           . ${GITHUB_WORKSPACE}/.ci/env
           export HOME=/root
-          archs=("aarch64-linux-android" "x86_64-linux-android")
-          tripples=("aarch64-linux-android" "x86_64-linux-android")
-          sysroots=("aarch64-linux-android" "x86_64-linux-android")
+          archs=("aarch64-linux-android" "armv7a-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
+          tripples=("aarch64-linux-android" "armv7-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
+          sysroots=("aarch64-linux-android" "arm-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
           rustflags=("-C target-feature=+neon" "-C target-feature=+neon" "" "")
           for i in ${!archs[@]}; do
             export C_INCLUDE_PATH=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/:/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/${sysroots[$i]}/
@@ -43,6 +43,8 @@ jobs:
           name: artifacts
           path: |
             self-omemo-aarch64-linux-android
+            self-omemo-armv7-linux-androideabi
+            self-omemo-i686-linux-android
             self-omemo-x86_64-linux-android
           retention-days: 1
       - name: Failure notification
