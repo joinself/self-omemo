@@ -28,8 +28,10 @@ jobs:
             export AR=/opt/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
             export RUSTFLAGS=${rustflags[$i]}
             cargo build --release --target ${tripples[$i]}
-            mkdir -p self-omemo-android-${archs[$i]}/include/
-            cp self_omemo.h self-omemo-android-${archs[$i]}/include/
+            mkdir -p self-omemo-${tripples[$i]}
+            #mkdir -p self-omemo-android-${archs[$i]}/include/
+            cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
+            #cp self_omemo.h self-omemo-android-${archs[$i]}/include/
           done
           apt-get update
           apt-get install -y tree
@@ -40,8 +42,8 @@ jobs:
         with:
           name: artifacts
           path: |
-            self-omemo-android-aarch64-linux-android
-            self-omemo-android-x86_64-linux-android
+            self-omemo-aarch64-linux-android
+            self-omemo-x86_64-linux-android
           retention-days: 1
       - name: Failure notification
         if: ${{ github.ref == 'refs/heads/main' && failure() }}

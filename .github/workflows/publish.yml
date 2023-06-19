@@ -63,7 +63,11 @@ jobs:
           else
             release_notes="${body}"
           fi
-          gh release create "${version}" --notes "${release_notes}"
+
+          tar -czvf self-omemo-aarch64-linux-android.tar.gz self-omemo-aarch64-linux-android
+          tar -czvf self-omemo-x86_64-linux-android.tar.gz self-omemo-x86_64-linux-android
+
+          gh release create "${version}" --notes "${release_notes}" self-omemo-aarch64-linux-android.tar.gz self-omemo-x86_64-linux-android.tar.gz
 
           #slack-release-notification -v ${version}
 
