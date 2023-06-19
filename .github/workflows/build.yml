@@ -31,6 +31,10 @@ jobs:
             mkdir -p self-omemo-android-${archs[$i]}/include/
             cp self_omemo.h self-omemo-android-${archs[$i]}/include/
           done
+          apt-get update
+          apt-get install -y tree
+          ls -lah
+          tree
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
