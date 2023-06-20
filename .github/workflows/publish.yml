@@ -23,6 +23,13 @@ jobs:
         run: |
           . ${GITHUB_WORKSPACE}/.ci/env
           chown root:root .
+
+          apt-get update
+          apt-get install -y tree
+          ls -lah
+          tree
+          exit 1
+
           git config --global user.name ci
           git config --global user.email ops@joinself.com
 
