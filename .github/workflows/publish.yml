@@ -77,7 +77,7 @@ jobs:
           tar -czvf self-omemo-i686-linux-android-${version}.tar.gz self-omemo-i686-linux-android-${version}
           tar -czvf self-omemo-x86_64-linux-android-${version}.tar.gz self-omemo-x86_64-linux-android-${version}
 
-          gh release create "${version}" --notes "${release_notes}" self-omemo_${version}_arm64.deb self-omemo_${version}_amd64.deb self-omemo-${version}.aarch64.rpm self-omemo-${version}.x86_64.rpm self-omemo-aarch64-unknown-linux-gnu-${version}.tar.gz self-omemo-x86_64-unknown-linux-gnu-${version}.tar.gz self-omemo-aarch64-linux-android-${version}.tar.gz self-omemo-armv7-linux-androideabi-${version}.tar.gz self-omemo-i686-linux-android-${version}.tar.gz self-omemo-x86_64-linux-android-${version}.tar.gz
+          gh release create "${version}" --notes "${release_notes}" self-omemo_${version}_arm64.deb self-omemo_${version}_amd64.deb self-omemo-${version}-1.aarch64.rpm self-omemo-${version}-1.x86_64.rpm self-omemo-aarch64-unknown-linux-gnu-${version}.tar.gz self-omemo-x86_64-unknown-linux-gnu-${version}.tar.gz self-omemo-aarch64-linux-android-${version}.tar.gz self-omemo-armv7-linux-androideabi-${version}.tar.gz self-omemo-i686-linux-android-${version}.tar.gz self-omemo-x86_64-linux-android-${version}.tar.gz
 
           #slack-release-notification -v ${version}
       - name: Failure notification
