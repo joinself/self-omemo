@@ -1,0 +1,41 @@
+name: _build-mac
+
+on: 
+  workflow_call:
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Setup job
+        uses: joinself/github-actions-public/setup-job@main
+      - name: Build
+        shell: bash
+        run: |
+          . ${GITHUB_WORKSPACE}/.ci/env
+          rustup target add aarch64-apple-darwin aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-darwin x86_64-apple-ios
+          tripples=("aarch64-apple-darwin" "aarch64-apple-ios" "aarch64-apple-ios-sim" "x86_64-apple-darwin" "x86_64-apple-ios")
+          rustflags=("-C target-feature=+neon" "-C target-feature=+neon" "-C target-feature=+neon" "" "")
+          for i in ${!tripples[@]}; do
+            export RUSTFLAGS=${rustflags[$i]}
+            cargo build --release --target ${tripples[$i]}
+            mkdir -p self-omemo-${tripples[$i]}
+            cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
+            strip -x self-omemo-${tripples[$i]}/libself_omemo.a
+          done
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            self-omemo-aarch64-apple-darwin
+            self-omemo-aarch64-apple-ios
+            self-omemo-aarch64-apple-ios-sim
+            self-omemo-x86_64-apple-darwin
+            self-omemo-x86_64-apple-ios
+          retention-days: 1
+      - name: Failure notification
+        if: ${{ github.ref == 'refs/heads/main' && failure() }}
+        uses: joinself/github-actions-public/failure-notification@main
+        with:
+          slack-webhook: ${{ secrets.SLACK_WEBHOOK_CI_ALERTS }}
