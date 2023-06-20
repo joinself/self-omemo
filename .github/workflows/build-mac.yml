@@ -13,7 +13,6 @@ jobs:
         shell: bash
         run: |
           . ${GITHUB_WORKSPACE}/.ci/env
-          #export HOME=/root
           rustup target add aarch64-apple-darwin aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-darwin x86_64-apple-ios
           tripples=("aarch64-apple-darwin" "aarch64-apple-ios" "aarch64-apple-ios-sim" "x86_64-apple-darwin" "x86_64-apple-ios")
           rustflags=("-C target-feature=+neon" "-C target-feature=+neon" "-C target-feature=+neon" "" "")
@@ -33,7 +32,7 @@ jobs:
             self-omemo-aarch64-apple-ios
             self-omemo-aarch64-apple-ios-sim
             self-omemo-x86_64-apple-darwin
-            self-omemo-x86_64-apple-dios
+            self-omemo-x86_64-apple-ios
           retention-days: 1
       - name: Failure notification
         if: ${{ github.ref == 'refs/heads/main' && failure() }}
