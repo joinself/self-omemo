@@ -61,8 +61,8 @@ jobs:
           fpm -s dir -t deb -n self-omemo -v ${version} -a arm64 ./self-omemo-aarch64-unknown-linux-gnu/libself_omemo.a=/usr/lib/ ./self-omemo-aarch64-unknown-linux-gnu/self_omemo.h=/usr/include/
           fpm -s dir -t deb -n self-omemo -v ${version} -a amd64 ./self-omemo-x86_64-unknown-linux-gnu/libself_omemo.a=/usr/lib/ ./self-omemo-x86_64-unknown-linux-gnu/self_omemo.h=/usr/include/
 
-          fpm -s dir -t rpm -n self-omemo -v ${version} -a aarch64 ./self-omemo-aarch64-unknown-linux-gnu/libself_omemo.a=/usr/lib/ ./self-omemo-aarch64-unknown-linux-gnu/self_omemo.h=/usr/include/
-          fpm -s dir -t rpm -n self-omemo -v ${version} -a x86_64 ./self-omemo-x86_64-unknown-linux-gnu/libself_omemo.a=/usr/lib/ ./self-omemo-x86_64-unknown-linux-gnu/self_omemo.h=/usr/include/
+          fpm -s dir -t rpm -n self-omemo -v ${version} -a aarch64 ./self-omemo-aarch64-unknown-linux-gnu/libself_omemo.so=/usr/lib64/ ./self-omemo-aarch64-unknown-linux-gnu/self_omemo.h=/usr/include/
+          fpm -s dir -t rpm -n self-omemo -v ${version} -a x86_64 ./self-omemo-x86_64-unknown-linux-gnu/libself_omemo.so=/usr/lib64/ ./self-omemo-x86_64-unknown-linux-gnu/self_omemo.h=/usr/include/
 
           mv self-omemo-aarch64-unknown-linux-gnu self-omemo-aarch64-unknown-linux-gnu-${version}
           mv self-omemo-x86_64-unknown-linux-gnu self-omemo-x86_64-unknown-linux-gnu-${version}

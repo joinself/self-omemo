@@ -24,10 +24,12 @@ jobs:
             export RUSTFLAGS=${rustflags[$i]}
             cargo build --release --target ${tripples[$i]}
             mkdir -p self-omemo-${tripples[$i]}
-            cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
+            cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a target/${tripples[$i]}/release/libself_omemo.so self-omemo-${tripples[$i]}
           done
           aarch64-linux-gnu-strip -x self-omemo-aarch64-unknown-linux-gnu/libself_omemo.a
+          aarch64-linux-gnu-strip -x self-omemo-aarch64-unknown-linux-gnu/libself_omemo.so
           strip -x self-omemo-x86_64-unknown-linux-gnu/libself_omemo.a
+          strip -x self-omemo-x86_64-unknown-linux-gnu/libself_omemo.so
 
           # android
           archs=("aarch64-linux-android" "armv7a-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
