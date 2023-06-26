@@ -17,6 +17,8 @@ jobs:
           . ${GITHUB_WORKSPACE}/.ci/env
           export HOME=/root
 
+          rustup default nightly
+
           # linux
           tripples=("aarch64-unknown-linux-gnu" "x86_64-unknown-linux-gnu")
           rustflags=("-C target-feature=+neon -Zdylib-lto" "-Zdylib-lto")
