@@ -19,7 +19,7 @@ jobs:
 
           # linux
           tripples=("aarch64-unknown-linux-gnu" "x86_64-unknown-linux-gnu")
-          rustflags=("-C target-feature=+neon" "")
+          rustflags=("-C target-feature=+neon -Zdylib-lto" "-Zdylib-lto")
           for i in ${!tripples[@]}; do
             export RUSTFLAGS=${rustflags[$i]}
             cargo rustc --release --target ${tripples[$i]} -- --crate-type=dylib
