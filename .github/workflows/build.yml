@@ -28,6 +28,7 @@ jobs:
           rustflags=("-C target-feature=+neon -Zdylib-lto" "-Zdylib-lto")
           for i in ${!tripples[@]}; do
             export RUSTFLAGS=${rustflags[$i]}
+            cargo rustc --release --target ${tripples[$i]}
             cargo rustc --release --target ${tripples[$i]} --crate-type=dylib
             mkdir -p self-omemo-${tripples[$i]}
             cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a target/${tripples[$i]}/release/libself_omemo.so self-omemo-${tripples[$i]}
