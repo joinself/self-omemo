@@ -20,7 +20,6 @@ jobs:
           rustup default nightly
           rustup target add --toolchain nightly aarch64-unknown-linux-gnu
           rustup target add --toolchain nightly x86_64-unknown-linux-gnu
-          apt update && apt install -y gcc-aarch64-linux-gnu
 
           export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=/usr/bin/aarch64-linux-gnu-gcc
 
@@ -29,7 +28,7 @@ jobs:
           rustflags=("-C target-feature=+neon -Zdylib-lto" "-Zdylib-lto")
           for i in ${!tripples[@]}; do
             export RUSTFLAGS=${rustflags[$i]}
-            cargo rustc --release --target ${tripples[$i]} -- --crate-type=dylib
+            cargo rustc --release --target ${tripples[$i]} --crate-type=dylib
             mkdir -p self-omemo-${tripples[$i]}
             cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a target/${tripples[$i]}/release/libself_omemo.so self-omemo-${tripples[$i]}
           done
