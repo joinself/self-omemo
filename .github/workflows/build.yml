@@ -18,7 +18,8 @@ jobs:
           export HOME=/root
 
           rustup default nightly
-          rustup component add rust-std
+          rustup target add --toolchain nightly aarch64-unknown-linux-gnu
+          rustup target add --toolchain nightly x86_64-unknown-linux-gnu
 
           # linux
           tripples=("aarch64-unknown-linux-gnu" "x86_64-unknown-linux-gnu")
@@ -33,6 +34,8 @@ jobs:
           aarch64-linux-gnu-strip -x self-omemo-aarch64-unknown-linux-gnu/libself_omemo.so
           strip -x self-omemo-x86_64-unknown-linux-gnu/libself_omemo.a
           strip -x self-omemo-x86_64-unknown-linux-gnu/libself_omemo.so
+
+          rustup default stable
 
           # android
           archs=("aarch64-linux-android" "armv7a-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
