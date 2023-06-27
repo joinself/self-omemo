@@ -17,17 +17,28 @@ jobs:
           . ${GITHUB_WORKSPACE}/.ci/env
           export HOME=/root
 
+          rustup default nightly
+          rustup target add --toolchain nightly aarch64-unknown-linux-gnu
+          rustup target add --toolchain nightly x86_64-unknown-linux-gnu
+
+          export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=/usr/bin/aarch64-linux-gnu-gcc
+
           # linux
           tripples=("aarch64-unknown-linux-gnu" "x86_64-unknown-linux-gnu")
-          rustflags=("-C target-feature=+neon" "")
+          rustflags=("-C target-feature=+neon -Zdylib-lto" "-Zdylib-lto")
           for i in ${!tripples[@]}; do
             export RUSTFLAGS=${rustflags[$i]}
-            cargo build --release --target ${tripples[$i]}
+            cargo rustc --release --target ${tripples[$i]}
+            cargo rustc --release --target ${tripples[$i]} --crate-type=dylib
             mkdir -p self-omemo-${tripples[$i]}
-            cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a self-omemo-${tripples[$i]}
+            cp self_omemo.h target/${tripples[$i]}/release/libself_omemo.a target/${tripples[$i]}/release/libself_omemo.so self-omemo-${tripples[$i]}
           done
           aarch64-linux-gnu-strip -x self-omemo-aarch64-unknown-linux-gnu/libself_omemo.a
+          aarch64-linux-gnu-strip -x self-omemo-aarch64-unknown-linux-gnu/libself_omemo.so
           strip -x self-omemo-x86_64-unknown-linux-gnu/libself_omemo.a
+          strip -x self-omemo-x86_64-unknown-linux-gnu/libself_omemo.so
+
+          rustup default stable
 
           # android
           archs=("aarch64-linux-android" "armv7a-linux-androideabi" "i686-linux-android" "x86_64-linux-android")
