@@ -25,19 +25,19 @@ jobs:
           # done
           echo 'hit1'
           ls
-          rustup target add x86_64-pc-windows-gnu
+          rustup target add x86_64-pc-windows-msvc
           echo 'hit2'
           ls
-          cargo build --release --target x86_64-pc-windows-gnu
+          cargo build --release --target x86_64-pc-windows-msvc
           echo 'hit3'
           ls
-          mkdir -p self-omemo-x86_64-pc-windows-gnu
+          mkdir -p self-omemo-x86_64-pc-windows-msvc
           echo 'hit4'
           ls
-          cp self_omemo.h target/x86_64-pc-windows-gnu/release/libself_omemo.a self-omemo-x86_64-pc-windows-gnu
+          cp self_omemo.h target/x86_64-pc-windows-msvc/release/libself_omemo.a self-omemo-x86_64-pc-windows-msvc
           echo 'hit5'
           ls
-          strip -x self-omemo-x86_64-pc-windows-gnu/libself_omemo.a
+          strip -x self-omemo-x86_64-pc-windows-msvc/libself_omemo.a
           echo 'hit6'
           ls
       - name: Upload artifacts
@@ -45,7 +45,7 @@ jobs:
         with:
           name: artifacts
           path: |
-            self-omemo-x86_64-pc-windows-gnu
+            self-omemo-x86_64-pc-windows-msvc
           retention-days: 1
       - name: Failure notification
         if: ${{ github.ref == 'refs/heads/main' && failure() }}
