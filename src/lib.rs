@@ -7,9 +7,9 @@
 #![allow(clippy::missing_safety_doc)]
 
 // include all of the other modules in the library
-mod message;
+pub mod message;
 pub mod olm;
-mod omemo;
+pub mod omemo;
 pub mod sodium;
 
 use libc::{c_char, size_t};
