@@ -17,6 +17,14 @@
 
 #define self_crypto_aead_xchacha20poly1305_ietf_KEYBYTES 32
 
+#define self_crypto_box_PUBLICKEYBYTES 32
+
+#define self_crypto_box_SECRETKEYBYTES 32
+
+#define self_crypto_sign_PUBLICKEYBYTES 32
+
+#define self_crypto_sign_SECRETKEYBYTES 64
+
 typedef struct GroupSession GroupSession;
 
 typedef struct OlmAccount OlmAccount;
