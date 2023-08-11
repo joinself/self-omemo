@@ -8,7 +8,7 @@ build = "build.rs"
 
 [lib]
 name = "self_omemo"
-crate-type = ["staticlib"]
+crate-type = ["lib", "staticlib"]
 
 [dependencies]
 libc = "0.2"
