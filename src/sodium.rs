@@ -8,6 +8,10 @@ pub const self_base64_VARIANT_ORIGINAL_NO_PADDING: u32 = 3; // sodium_base64_VAR
 pub const self_crypto_aead_xchacha20poly1305_ietf_ABYTES: u32 = 16; // crypto_aead_xchacha20poly1305_ietf_ABYTES
 pub const self_crypto_aead_xchacha20poly1305_ietf_NPUBBYTES: u32 = 24; // crypto_aead_xchacha20poly1305_ietf_NPUBBYTES
 pub const self_crypto_aead_xchacha20poly1305_ietf_KEYBYTES: u32 = 32; // crypto_aead_xchacha20poly1305_ietf_KEYBYTES
+pub const self_crypto_box_PUBLICKEYBYTES: u32 = 32; // crypto_box_PUBLICKEYBYTES
+pub const self_crypto_box_SECRETKEYBYTES: u32 = 32; // crypto_box_SECRETKEYBYTES
+pub const self_crypto_sign_PUBLICKEYBYTES: u32 = 32; // crypto_sign_PUBLICKEYBYTES
+pub const self_crypto_sign_SECRETKEYBYTES: u32 = 64;// crypto_sign_SECRETKEYBYTES
 
 // wrap sodium functions
 #[no_mangle]
