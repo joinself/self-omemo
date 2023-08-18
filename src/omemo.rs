@@ -188,7 +188,12 @@ impl GroupSession {
         Ok(result.unwrap() as size_t)
     }
 
-    pub unsafe fn decrypt(&mut self, id: &str, pt: &mut [u8], ct: &[u8]) -> Result<usize, OmemoError> {
+    pub unsafe fn decrypt(
+        &mut self,
+        id: &str,
+        pt: &mut [u8],
+        ct: &[u8],
+    ) -> Result<usize, OmemoError> {
         let identifier = match &self.id {
             Some(id) => id,
             None => {
