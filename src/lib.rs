@@ -7,12 +7,14 @@
 #![allow(clippy::missing_safety_doc)]
 
 // include all of the other modules in the library
+pub mod error;
 pub mod message;
 pub mod olm;
 pub mod omemo;
 pub mod sodium;
 
 use libc::{c_char, size_t};
+use std::ffi::CStr;
 
 use crate::olm::OlmSession;
 use crate::omemo::GroupSession;
@@ -20,13 +22,19 @@ use crate::omemo::GroupSession;
 // creates a group session that allocated on the heap
 #[no_mangle]
 pub unsafe extern "C" fn self_omemo_create_group_session() -> *mut GroupSession {
-    GroupSession::new()
+    Box::into_raw(Box::new(GroupSession::new()))
 }
 
 // creates a group session that allocated on the heap
 #[no_mangle]
 pub unsafe extern "C" fn self_omemo_set_identity(gs: *mut GroupSession, id: *const c_char) {
-    (*gs).set_identity(id);
+    let idstr = CStr::from_ptr(id).to_str();
+
+    if idstr.is_err() {
+        println!("error: {}", idstr.unwrap_err());
+    };
+
+    (*gs).set_identity(idstr.unwrap().to_string());
 }
 
 // destroy a group session by consuming the box
@@ -43,7 +51,13 @@ pub unsafe extern "C" fn self_omemo_add_group_participant(
     id: *const c_char,
     s: *mut OlmSession,
 ) {
-    (*gs).add_participant(id, s);
+    let idstr = CStr::from_ptr(id).to_str();
+
+    if idstr.is_err() {
+        println!("error: {}", idstr.unwrap_err());
+    };
+
+    (*gs).add_participant(idstr.unwrap().to_string(), s);
 }
 
 // get the size of an encrypted message from the plaintext size
@@ -52,7 +66,7 @@ pub unsafe extern "C" fn self_omemo_encrypted_size(
     gs: *mut GroupSession,
     pt_len: size_t,
 ) -> size_t {
-    (*gs).encrypted_size(pt_len)
+    (*gs).encrypted_size(pt_len).expect("this shouldn't fail")
 }
 
 // get the size of a decrypted message from the ciphertext
@@ -62,7 +76,8 @@ pub unsafe extern "C" fn self_omemo_decrypted_size(
     ct: *const u8,
     ct_len: size_t,
 ) -> size_t {
-    (*gs).decrypted_size(ct, ct_len)
+    let ciphertext = std::slice::from_raw_parts(ct, ct_len);
+    (*gs).decrypted_size(ciphertext)
 }
 
 // encrypt a message for all participants in the group session
@@ -74,7 +89,16 @@ pub unsafe extern "C" fn self_omemo_encrypt(
     ct: *mut u8,
     ct_len: size_t,
 ) -> size_t {
-    (*gs).encrypt(pt, pt_len, ct, ct_len)
+    assert!(!pt.is_null(), "plaintext buffer must not be null");
+    assert!(!ct.is_null(), "ciphertext buffer must not be null");
+
+    let plaintext = std::slice::from_raw_parts(pt, pt_len);
+    let ciphertext = std::slice::from_raw_parts_mut(ct, ct_len);
+
+    match (*gs).encrypt(plaintext, ciphertext) {
+        Ok(len) => len,
+        Err(_) => 0,
+    }
 }
 
 // decrypt a message from one of the recipients in the group session
@@ -87,5 +111,19 @@ pub unsafe extern "C" fn self_omemo_decrypt(
     ct: *const u8,
     ct_len: size_t,
 ) -> size_t {
-    (*gs).decrypt(id, pt, pt_len, ct, ct_len)
+    assert!(!pt.is_null(), "plaintext buffer must not be null");
+    assert!(!ct.is_null(), "ciphertext buffer must not be null");
+
+    let plaintext = std::slice::from_raw_parts_mut(pt, pt_len);
+    let ciphertext = std::slice::from_raw_parts(ct, ct_len);
+
+    let identifier = match CStr::from_ptr(id).to_str() {
+        Ok(identifier) => identifier,
+        Err(_) => return 0,
+    };
+
+    match (*gs).decrypt(identifier, plaintext, ciphertext) {
+        Ok(len) => len,
+        Err(_) => 0,
+    }
 }

@@ -11,7 +11,7 @@ pub const self_crypto_aead_xchacha20poly1305_ietf_KEYBYTES: u32 = 32; // crypto_
 pub const self_crypto_box_PUBLICKEYBYTES: u32 = 32; // crypto_box_PUBLICKEYBYTES
 pub const self_crypto_box_SECRETKEYBYTES: u32 = 32; // crypto_box_SECRETKEYBYTES
 pub const self_crypto_sign_PUBLICKEYBYTES: u32 = 32; // crypto_sign_PUBLICKEYBYTES
-pub const self_crypto_sign_SECRETKEYBYTES: u32 = 64;// crypto_sign_SECRETKEYBYTES
+pub const self_crypto_sign_SECRETKEYBYTES: u32 = 64; // crypto_sign_SECRETKEYBYTES
 
 // wrap sodium functions
 #[no_mangle]
