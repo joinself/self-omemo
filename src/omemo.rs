@@ -8,6 +8,7 @@ use libc::{c_ulonglong, size_t};
 use olm_sys::*;
 use sodium_sys::*;
 
+use crate::error::OmemoError;
 use crate::message::{decode_group_message, GroupMessage, Message};
 
 // GroupSession holds all of the participants of a session,
@@ -48,7 +49,7 @@ impl GroupSession {
     }
 
     // returns the size of an encrypted message based on the plaintext size
-    pub unsafe fn encrypted_size(&mut self, pt_len: usize) -> Result<usize, ()> {
+    pub unsafe fn encrypted_size(&mut self, pt_len: usize) -> Result<usize, OmemoError> {
         // generate a fake encoded message
         // include 16 byte validation tag
         let pt_sz = sodium_base64_encoded_len(
@@ -79,7 +80,7 @@ impl GroupSession {
         // encode the fake message and return its size
         match gm.encode() {
             Ok(encoded) => Ok(encoded.len()),
-            Err(_) => Err(()),
+            Err(_) => Err(OmemoError::MessageEncodeFailed),
         }
     }
 
@@ -94,7 +95,7 @@ impl GroupSession {
     }
 
     // encrypt a message
-    pub unsafe fn encrypt(&mut self, pt: &[u8], ct: &mut [u8]) -> Result<usize, ()> {
+    pub unsafe fn encrypt(&mut self, pt: &[u8], ct: &mut [u8]) -> Result<usize, OmemoError> {
         // setup message ciphertext, key and nonce buffer
         let mut ctb: Vec<u8> = vec![0; pt.len() + 16];
         let mut ctbl = ctb.len() as c_ulonglong;
@@ -102,7 +103,7 @@ impl GroupSession {
         let mut nb: Vec<u8> = vec![0; 24];
 
         if sodium_init() == -1 {
-            return Err(());
+            return Err(OmemoError::SodiumInit);
         }
 
         // create group message key
@@ -148,7 +149,7 @@ impl GroupSession {
             // get the actual size of the encrypted key
             let ct_sz = olm_encrypt_message_length(p.session, 32 + 24);
             if session_error(p.session).is_some() {
-                return Err(());
+                return Err(OmemoError::OlmEncryptFailed);
             };
 
             // allocate buffer for the ciphertext and encrypt the key + nonce
@@ -165,7 +166,7 @@ impl GroupSession {
             );
 
             if session_error(p.session).is_some() {
-                return Err(());
+                return Err(OmemoError::OlmEncryptFailed);
             }
 
             // add encrypted key + nonce to group message
@@ -181,18 +182,18 @@ impl GroupSession {
         // copy encoded json to ciphertext buffer
         let result = gm.encode_to_buffer(ct);
         if result.is_err() {
-            return Err(());
+            return Err(OmemoError::MessageEncodeFailed);
         }
 
         Ok(result.unwrap() as size_t)
     }
 
-    pub unsafe fn decrypt(&mut self, id: &str, pt: &mut [u8], ct: &[u8]) -> Result<usize, ()> {
+    pub unsafe fn decrypt(&mut self, id: &str, pt: &mut [u8], ct: &[u8]) -> Result<usize, OmemoError> {
         let identifier = match &self.id {
             Some(id) => id,
             None => {
                 println!("error: group session identity has not been set");
-                return Err(());
+                return Err(OmemoError::MissingIdentifier);
             }
         };
 
@@ -201,7 +202,7 @@ impl GroupSession {
             Some(pos) => self.participants[pos].session,
             None => {
                 println!("error: participant not found in group session");
-                return Err(());
+                return Err(OmemoError::MissingSenderSession);
             }
         };
 
@@ -210,7 +211,7 @@ impl GroupSession {
             Ok(gm) => gm,
             Err(err) => {
                 println!("error: could not decode message: {}", err);
-                return Err(());
+                return Err(OmemoError::MessageDecodeFailed);
             }
         };
 
@@ -218,7 +219,7 @@ impl GroupSession {
             Some(hdr) => hdr,
             None => {
                 println!("error: message is not intended for this identity");
-                return Err(());
+                return Err(OmemoError::MissingRecipientCiphertext);
             }
         };
 
@@ -236,7 +237,7 @@ impl GroupSession {
         );
 
         if session_error(sender_session).is_some() {
-            return Err(());
+            return Err(OmemoError::OlmDecryptFailed);
         }
 
         // allocate a buffer for the plaintext message key + nonce
@@ -254,19 +255,19 @@ impl GroupSession {
         );
 
         if session_error(sender_session).is_some() {
-            return Err(());
+            return Err(OmemoError::OlmDecryptFailed);
         }
 
         // decode the group messages ciphertext from base64
         let mut decoded = match decode_config(group_message.ciphertext, base64::STANDARD_NO_PAD) {
             Ok(decoded) => decoded,
-            Err(_) => return Err(()),
+            Err(_) => return Err(OmemoError::MessageDecodeFailed),
         };
 
         let mut ptl = pt.len() as c_ulonglong;
 
         if sodium_init() == -1 {
-            return Err(());
+            return Err(OmemoError::SodiumInit);
         }
 
         let ret = crypto_aead_xchacha20poly1305_ietf_decrypt(
@@ -283,7 +284,7 @@ impl GroupSession {
 
         if ret != 0 {
             println!("error: decrypt failed");
-            return Err(());
+            return Err(OmemoError::OlmDecryptFailed);
         }
 
         Ok(ptl as usize)

@@ -7,6 +7,7 @@
 #![allow(clippy::missing_safety_doc)]
 
 // include all of the other modules in the library
+pub mod error;
 pub mod message;
 pub mod olm;
 pub mod omemo;

@@ -5,6 +5,8 @@ extern crate libc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use crate::error::OmemoError;
+
 // Message is the containing structure for a message to an individual recipient
 // macro to set this struct to as serializable by serde, the encoding library
 #[derive(Serialize, Deserialize)]
@@ -61,14 +63,14 @@ impl GroupMessage {
 
     // Result is a tuple that gets returned that wrap an value or an error. It's similar to returning (value, error) in go
     // you can call .is_err() to check if there is an error, or you can .unwrap() the result to get the value
-    pub unsafe fn encode_to_buffer(&self, buf: &mut [u8]) -> Result<usize, ()> {
+    pub unsafe fn encode_to_buffer(&self, buf: &mut [u8]) -> Result<usize, OmemoError> {
         if let Ok(encoded) = serde_json::to_vec(self) {
             assert!(buf.len() >= encoded.len(), "buffer size is too small");
             buf[..encoded.len()].copy_from_slice(&encoded);
             return Ok(encoded.len());
         }
 
-        Err(())
+        Err(OmemoError::MessageDecodeFailed)
     }
 
     pub fn add_recipient(&mut self, recipient: String, msg: Message) {
