@@ -2,11 +2,8 @@
 
 extern crate libc;
 
-use libc::size_t;
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
 use std::collections::HashMap;
-use std::ptr;
 
 // Message is the containing structure for a message to an individual recipient
 // macro to set this struct to as serializable by serde, the encoding library
@@ -58,53 +55,34 @@ impl GroupMessage {
 
     // self in this context is a pointer to the group message struct
     // its actually not a parameter you have to pass in when calling this function
-    pub fn encode(&self) -> Result<Vec<u8>> {
+    pub fn encode(&self) -> serde_json::Result<Vec<u8>> {
         serde_json::to_vec(self)
     }
 
     // Result is a tuple that gets returned that wrap an value or an error. It's similar to returning (value, error) in go
     // you can call .is_err() to check if there is an error, or you can .unwrap() the result to get the value
-    pub unsafe fn encode_to_buffer(&self, buf: *mut u8, buf_len: usize) -> Result<size_t> {
-        let j = serde_json::to_vec(self);
+    pub unsafe fn encode_to_buffer(&self, buf: &mut [u8]) -> Result<usize, ()> {
+        if let Ok(encoded) = serde_json::to_vec(self) {
+            assert!(buf.len() >= encoded.len(), "buffer size is too small");
+            buf[..encoded.len()].copy_from_slice(&encoded);
+            return Ok(encoded.len());
+        }
 
-        if j.is_err() {
-            return Err(j.err().unwrap());
-        };
-
-        let mut result = j.unwrap();
-
-        // this is an assertion that will panic if not true
-        // the 'as' syntax is used to cast from one type to another
-        // in this case, its casting from u64 -> usize
-        assert!(buf_len >= result.len(), "buffer size is too small");
-
-        // rust enforces strict guarantees around memory safety.
-        // the compiler will check that the memory you are accessing is valid
-        // some scenarios the compiler can't check.
-        // in this case, we are attempting to copy from memory allocated in rust
-        // to memory allocated in c. The compiler can't determine if the memory
-        // its copying to is valid, so we use this unsafe block to tell the compiler
-        // to relax some of its checks.
-        ptr::copy(result.as_mut_ptr(), buf, result.len());
-
-        // return an ok result containing the size of the data written to the buffer
-        Ok(result.len())
+        Err(())
     }
 
     pub fn add_recipient(&mut self, recipient: String, msg: Message) {
         self.recipients.insert(recipient, msg);
     }
+
+    pub fn decrypted_size(&self) -> usize {
+        self.ciphertext.len() - 16
+    }
 }
 
-pub unsafe fn decode_group_message(buf: *const u8, len: usize) -> Result<GroupMessage> {
-    let mut dst = vec![0; len];
-
-    ptr::copy(buf, dst.as_mut_ptr(), len);
-
+pub unsafe fn decode_group_message(buf: &[u8]) -> serde_json::Result<GroupMessage> {
     // deserialize the vector to a group message struct
-    let gm: GroupMessage = serde_json::from_slice(dst.as_slice())?;
-
-    Ok(gm)
+    serde_json::from_slice(buf)
 }
 
 // unit tests are normally written in the same file as the implementation
