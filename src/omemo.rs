@@ -249,7 +249,6 @@ impl GroupSession {
         let mut ptk_buf: Vec<u8> = vec![0; ptk_sz];
 
         // decrypt the message key + nonce
-
         olm_decrypt(
             sender_session,
             message_hdr.mtype as usize,
@@ -293,6 +292,12 @@ impl GroupSession {
         }
 
         Ok(ptl as usize)
+    }
+}
+
+impl Default for GroupSession {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
