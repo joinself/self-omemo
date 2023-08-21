@@ -35,7 +35,6 @@ pub struct GroupMessage {
     pub ciphertext: String,
 }
 
-
 impl Message {
     pub fn new(mtype: i64, ciphertext: String) -> Message {
         Message { mtype, ciphertext }
