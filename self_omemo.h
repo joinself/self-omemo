@@ -31,6 +31,44 @@ typedef struct OlmAccount OlmAccount;
 
 typedef struct OlmSession OlmSession;
 
+typedef unsigned int SelfOlmErrorCode;
+
+#define SelfOlmErrorCode_OLM_SUCCESS 0
+
+#define SelfOlmErrorCode_OLM_NOT_ENOUGH_RANDOM 1
+
+#define SelfOlmErrorCode_OLM_OUTPUT_BUFFER_TOO_SMALL 2
+
+#define SelfOlmErrorCode_OLM_BAD_MESSAGE_VERSION 3
+
+#define SelfOlmErrorCode_OLM_BAD_MESSAGE_FORMAT 4
+
+#define SelfOlmErrorCode_OLM_BAD_MESSAGE_MAC 5
+
+#define SelfOlmErrorCode_OLM_BAD_MESSAGE_KEY_ID 6
+
+#define SelfOlmErrorCode_OLM_INVALID_BASE64 7
+
+#define SelfOlmErrorCode_OLM_BAD_ACCOUNT_KEY 8
+
+#define SelfOlmErrorCode_OLM_UNKNOWN_PICKLE_VERSION 9
+
+#define SelfOlmErrorCode_OLM_CORRUPTED_PICKLE 10
+
+#define SelfOlmErrorCode_OLM_BAD_SESSION_KEY 11
+
+#define SelfOlmErrorCode_OLM_UNKNOWN_MESSAGE_INDEX 12
+
+#define SelfOlmErrorCode_OLM_BAD_LEGACY_ACCOUNT_PICKLE 13
+
+#define SelfOlmErrorCode_OLM_BAD_SIGNATURE 14
+
+#define SelfOlmErrorCode_OLM_INPUT_BUFFER_TOO_SMALL 15
+
+#define SelfOlmErrorCode_OLM_SAS_THEIR_KEY_NOT_SET 16
+
+#define SelfOlmErrorCode_OLM_PICKLE_EXTRA_DATA 17
+
 struct GroupSession *self_omemo_create_group_session(void);
 
 void self_omemo_set_identity(struct GroupSession *gs, const char *id);
@@ -122,6 +160,8 @@ size_t self_olm_account_identity_keys(struct OlmAccount *account,
 
 const char *self_olm_account_last_error(const struct OlmAccount *account);
 
+SelfOlmErrorCode self_olm_account_last_error_code(const struct OlmAccount *account);
+
 void self_olm_account_destroy(struct OlmAccount *account);
 
 struct OlmSession *self_olm_session(void *memory);
@@ -178,6 +218,8 @@ size_t self_olm_matches_inbound_session_from(struct OlmSession *session,
                                              size_t message_length);
 
 const char *self_olm_session_last_error(struct OlmSession *session);
+
+SelfOlmErrorCode self_olm_session_last_error_code(struct OlmSession *session);
 
 void self_olm_session_destroy(struct OlmSession *session);
 
