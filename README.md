@@ -81,6 +81,51 @@ sudo cp build/release/libself_omemo.so /usr/local/lib/
 sudo cp build/debug/libself_omemo.so /usr/local/lib/
 ```
 
+## Installing a released version
+
+First check the [list of self-omemo releases](https://github.com/joinself/self-omemo/releases) and choose the one you want to install. In the example below we will be installing version `0.11.0`.
+
+##### Debian/Ubuntu
+```bash
+curl -LO https://github.com/joinself/self-omemo/releases/download/0.11.0/self-omemo_0.11.0_amd64.deb
+apt install -y ./self-omemo_0.11.0_amd64.deb
+```
+
+##### CentOS/Fedora/RedHat
+```bash
+yum install -y libstdc++-static
+rpm -Uvh https://github.com/joinself/self-omemo/releases/download/0.11.0/self-omemo-0.11.0-1.x86_64.rpm
+```
+
+##### MacOS - AMD64
+```bash
+brew tap joinself/crypto
+brew install libself-omemo
+```
+
+##### MacOS - ARM64
+Brew on M1 macs currently lacks environment variables needed for the SDK to find the `omemo` library, so you will need to add some additional configuration to your system:
+
+In your `~/.zshrc`, add:
+```bash
+export C_INCLUDE_PATH=/opt/homebrew/include/
+export LIBRARY_PATH=$LIBRARY_PATH:/opt/homebrew/lib
+```
+
+You should then be able to run:
+
+```bash
+source ~/.zshrc
+brew tap joinself/crypto
+brew install --build-from-source libself-omemo
+```
+
+Note, you may also need to create `/usr/local/lib` if it does not exist:
+```bash
+sudo mkdir /usr/local/lib
+```
+
+
 ## Usage
 
 self-olm is an additional layer ontop of olm. This means that all session and account management needs to be handled by the caller of the library.
