@@ -24,7 +24,7 @@ jobs:
             strip -x self-omemo-${tripples[$i]}/libself_omemo.a
           done
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifacts
           path: |
