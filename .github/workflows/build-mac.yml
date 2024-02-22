@@ -24,9 +24,9 @@ jobs:
             strip -x self-omemo-${tripples[$i]}/libself_omemo.a
           done
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: build-mac-artifacts
           path: |
             self-omemo-aarch64-apple-darwin
             self-omemo-aarch64-apple-ios
