@@ -63,7 +63,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: build-artifacts
           path: |
             self-omemo-aarch64-unknown-linux-gnu
             self-omemo-x86_64-unknown-linux-gnu
