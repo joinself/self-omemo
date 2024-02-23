@@ -1,10 +1,10 @@
-name: _build
+name: _build-linux
 
 on: 
   workflow_call:
 
 jobs:
-  build:
+  build-linux:
     runs-on: ubuntu-latest
     container:
       image: joinself/rust-build
