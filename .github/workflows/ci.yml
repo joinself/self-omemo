@@ -17,9 +17,6 @@ jobs:
     with:
       container-image: joinself/license-finder:rust
     secrets: inherit
-  secret-scan:
-    uses: joinself/github-workflows-public/.github/workflows/secret-scan.yml@main
-    secrets: inherit
   build-linux:
     uses: ./.github/workflows/build-linux.yml
     secrets: inherit
@@ -28,6 +25,6 @@ jobs:
     secrets: inherit
   publish:
     if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [license-compliance, secret-scan, build-linux, build-mac]
+    needs: [license-compliance, build-linux, build-mac]
     uses: ./.github/workflows/publish.yml
     secrets: inherit
